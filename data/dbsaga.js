@@ -71,6 +71,19 @@ const SAGA_DB_SAGA =
     },
     {
       "id": "0003",
+      "nombre": "Goku (niño) y Bulma (niña)",
+      "variantes": [
+        {
+          "rareza": "LR",
+          "nombre": "Goku (niño) y Bulma (niña)",
+          "cardId": "1017381",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1017380/1017380.png",
+          "alternativa": false
+        }
+      ]
+    },
+    {
+      "id": "0004",
       "nombre": "Maestro Roshi",
       "variantes": [
         {
@@ -79,11 +92,18 @@ const SAGA_DB_SAGA =
           "cardId": "1000430",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1000430/1000430.png",
           "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Maestro Roshi",
+          "cardId": "1000250",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1000250/1000250.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0004",
+      "id": "0005",
       "nombre": "Ulong",
       "variantes": [
         {
@@ -96,7 +116,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0005",
+      "id": "0006",
       "nombre": "Yamcha",
       "variantes": [
         {
@@ -130,7 +150,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0006",
+      "id": "0007",
       "nombre": "Chi-Chi (Niña)",
       "variantes": [
         {
@@ -150,7 +170,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0007",
+      "id": "0008",
       "nombre": "Ox Satán",
       "variantes": [
         {
@@ -163,20 +183,101 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0008",
-      "nombre": "Maestro Roshi (Máximo Poder)",
+      "id": "0009",
+      "nombre": "Bulma (conejo)",
       "variantes": [
         {
-          "rareza": "SSR",
-          "nombre": "Maestro Roshi (Máximo Poder)",
-          "cardId": "1009310",
-          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009310/1009310.png",
+          "rareza": "SR",
+          "nombre": "Bulma (conejo)",
+          "cardId": "1004180",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1004180/1004180.png",
           "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Bulma (conejo)",
+          "cardId": "1029150",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029150/1029150.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Bulma (conejo)",
+          "cardId": "1029161",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029160/1029160.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0009",
+      "id": "0010",
+      "nombre": "Maestro Roshi (Máximo Poder)",
+      "variantes": [
+        {
+          "rareza": "SR",
+          "nombre": "Maestro Roshi (Máximo Poder)",
+          "cardId": "1009310",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009310/1009310.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Maestro Roshi",
+          "cardId": "1029130",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029130/1029130.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Maestro Roshi",
+          "cardId": "1029141",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029140/1029140.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0011",
+      "nombre": "Bulma (Niña)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Bulma (Niña)",
+          "cardId": "1011420",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1011420/1011420.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Bulma (Niña)",
+          "cardId": "1011431",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1011430/1011430.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0012",
+      "nombre": "Bulma (niña)",
+      "variantes": [
+        {
+          "rareza": "SR",
+          "nombre": "Bulma (niña)",
+          "cardId": "1003980",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1003980/1003980.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Bulma (niña)",
+          "cardId": "1008490",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1008490/1008490.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0013",
       "nombre": "Rey Conejo",
       "variantes": [
         {
@@ -189,7 +290,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0010",
+      "id": "0014",
       "nombre": "Goku (Niño) (Gran Mono)",
       "variantes": [
         {
@@ -202,7 +303,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0011",
+      "id": "0015",
       "nombre": "Krilin (Niño)",
       "variantes": [
         {
@@ -215,7 +316,61 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0012",
+      "id": "0016",
+      "nombre": "Goku (niño), Krilin (niño) y Bulma (niña)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Goku (niño)",
+          "cardId": "1026980",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1026980/1026980.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Goku (niño)",
+          "cardId": "1027551",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1027550/1027550.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Nueva cartaGoku (niño), Krilin (niño) y Bulma (niña)",
+          "cardId": "1028921",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1028920/1028920.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0017",
+      "nombre": "Gokú (Niño) (Gran Mono)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Gokú (Niño) (Gran Mono)",
+          "cardId": "1007670",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1007670/1007670.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Gokú (Niño) (Gran Mono)",
+          "cardId": "1011111",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1011110/1011110.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Gokú (Niño) (Gran Mono)",
+          "cardId": "4011111",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/4011110/4011110.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0018",
       "nombre": "Lanch",
       "variantes": [
         {
@@ -224,11 +379,45 @@ const SAGA_DB_SAGA =
           "cardId": "1004190",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1004190/1004190.png",
           "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Lanch",
+          "cardId": "1016240",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1016240/1016240.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Lanch",
+          "cardId": "1016251",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1016250/1016250.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0013",
+      "id": "0019",
+      "nombre": "Ulong y Lanch",
+      "variantes": [
+        {
+          "rareza": "SR",
+          "nombre": "Ulong y Lanch",
+          "cardId": "1027930",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1027930/1027930.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Ulong y Lanch",
+          "cardId": "1027940",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1027940/1027940.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0020",
       "nombre": "Yamcha",
       "variantes": [
         {
@@ -241,7 +430,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0014",
+      "id": "0021",
       "nombre": "Bacterian",
       "variantes": [
         {
@@ -254,7 +443,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0015",
+      "id": "0022",
       "nombre": "Lan-Fan",
       "variantes": [
         {
@@ -263,11 +452,25 @@ const SAGA_DB_SAGA =
           "cardId": "1011220",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1011220/1011220.png",
           "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Lan-Fan",
+          "cardId": "1031630",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031630/1031630.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Lan-Fan",
+          "cardId": "1031641",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031640/1031640.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0016",
+      "id": "0023",
       "nombre": "Giran",
       "variantes": [
         {
@@ -280,7 +483,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0017",
+      "id": "0024",
       "nombre": "Nam",
       "variantes": [
         {
@@ -293,7 +496,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0018",
+      "id": "0025",
       "nombre": "Jackie Chun",
       "variantes": [
         {
@@ -306,7 +509,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0019",
+      "id": "0026",
       "nombre": "Jackie Chun (Máximo Poder)",
       "variantes": [
         {
@@ -319,7 +522,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0020",
+      "id": "0027",
       "nombre": "Goku (Niño)",
       "variantes": [
         {
@@ -332,7 +535,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0021",
+      "id": "0028",
       "nombre": "Soldado de la Patrulla Roja",
       "variantes": [
         {
@@ -345,7 +548,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0022",
+      "id": "0029",
       "nombre": "Sargento Mayor Murasaki",
       "variantes": [
         {
@@ -358,20 +561,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0023",
-      "nombre": "Octavio",
-      "variantes": [
-        {
-          "rareza": "SSR",
-          "nombre": "Octavio",
-          "cardId": "1016960",
-          "img": "https://dokkaninfo.com/assets/global/en/character/card/1016960/1016960.png",
-          "alternativa": false
-        }
-      ]
-    },
-    {
-      "id": "0024",
+      "id": "0030",
       "nombre": "Robot pirata",
       "variantes": [
         {
@@ -384,7 +574,47 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0025",
+      "id": "0031",
+      "nombre": "Buyon",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Buyon",
+          "cardId": "1028620",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1028620/1028620.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Buyon",
+          "cardId": "1028631",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1028630/1028630.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0032",
+      "nombre": "Octavio",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Octavio",
+          "cardId": "1016960",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1016960/1016960.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Octavio",
+          "cardId": "1019681",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1019680/1019680.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0033",
       "nombre": "General Blue",
       "variantes": [
         {
@@ -411,14 +641,14 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0026",
+      "id": "0034",
       "nombre": "Tao Pai Pai",
       "variantes": [
         {
           "rareza": "SSR",
           "nombre": "Tao Pai Pai",
-          "cardId": "1022320",
-          "img": "https://dokkaninfo.com/assets/global/en/character/card/1022320/1022320.png",
+          "cardId": "1031290",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031290/1031290.png",
           "alternativa": false
         },
         {
@@ -431,7 +661,34 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0027",
+      "id": "0035",
+      "nombre": "Tao Pai Pai",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Tao Pai Pai",
+          "cardId": "1022320",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1022320/1022320.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Tao Pai Pai",
+          "cardId": "1022331",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1022330/1022330.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Tao Pai Pai",
+          "cardId": "1022341",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1022340/1022340.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0036",
       "nombre": "Intendente Black",
       "variantes": [
         {
@@ -444,7 +701,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0028",
+      "id": "0037",
       "nombre": "Dracula Man",
       "variantes": [
         {
@@ -457,7 +714,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0029",
+      "id": "0038",
       "nombre": "Hombre Invisible",
       "variantes": [
         {
@@ -470,7 +727,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0030",
+      "id": "0039",
       "nombre": "La Momia",
       "variantes": [
         {
@@ -483,7 +740,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0031",
+      "id": "0040",
       "nombre": "Akkuman",
       "variantes": [
         {
@@ -510,7 +767,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0032",
+      "id": "0041",
       "nombre": "Abuelo Gohan",
       "variantes": [
         {
@@ -537,7 +794,34 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0033",
+      "id": "0042",
+      "nombre": "Abuelo Gohan",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Abuelo Gohan",
+          "cardId": "1029490",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029490/1029490.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Abuelo Gohan",
+          "cardId": "1029501",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029500/1029500.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Abuelo Gohan",
+          "cardId": "1029511",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1029510/1029510.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0043",
       "nombre": "Mai",
       "variantes": [
         {
@@ -557,7 +841,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0034",
+      "id": "0044",
       "nombre": "Pilaf",
       "variantes": [
         {
@@ -584,7 +868,107 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0035",
+      "id": "0045",
+      "nombre": "Bulma (Niña)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Bulma (Niña)",
+          "cardId": "1026590",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1026590/1026590.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Bulma (Niña)",
+          "cardId": "1026601",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1026600/1026600.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Bulma (Niña)",
+          "cardId": "1026611",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1026610/1026610.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0046",
+      "nombre": "Pasta (Película)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Pasta (Película)",
+          "cardId": "1015350",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1015350/1015350.png",
+          "alternativa": false
+        }
+      ]
+    },
+    {
+      "id": "0047",
+      "nombre": "Yamcha (Película)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Yamcha (Película)",
+          "cardId": "1025240",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1025240/1025240.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Yamcha (Película)",
+          "cardId": "1025251",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1025250/1025250.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0048",
+      "nombre": "Octavio (Película)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Octavio (Película)",
+          "cardId": "1025030",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1025030/1025030.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Octavio (Película)",
+          "cardId": "1025041",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1025040/1025040.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0049",
+      "nombre": "Goku (Niño) (Película)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Goku (Niño) (Película)",
+          "cardId": "1025060",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1025060/1025060.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Goku (Niño) (Película)",
+          "cardId": "1025071",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1025070/1025070.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0050",
       "nombre": "Gola",
       "variantes": [
         {
@@ -597,7 +981,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0036",
+      "id": "0051",
       "nombre": "Mera",
       "variantes": [
         {
@@ -610,7 +994,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0037",
+      "id": "0052",
       "nombre": "Shula",
       "variantes": [
         {
@@ -623,7 +1007,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0038",
+      "id": "0053",
       "nombre": "Rey Chappa",
       "variantes": [
         {
@@ -636,7 +1020,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0039",
+      "id": "0054",
       "nombre": "Lobo Hombre",
       "variantes": [
         {
@@ -649,7 +1033,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0040",
+      "id": "0055",
       "nombre": "Krilin (Niño)",
       "variantes": [
         {
@@ -676,7 +1060,27 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0041",
+      "id": "0056",
+      "nombre": "Yamcha",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Yamcha",
+          "cardId": "1007310",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1007310/1007310.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Yamcha",
+          "cardId": "1007321",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1007320/1007320.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0057",
       "nombre": "Chaos",
       "variantes": [
         {
@@ -685,11 +1089,25 @@ const SAGA_DB_SAGA =
           "cardId": "1012560",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1012560/1012560.png",
           "alternativa": false
+        },
+        {
+          "rareza": "SSR",
+          "nombre": "Chaos",
+          "cardId": "1031350",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031350/1031350.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Chaos",
+          "cardId": "1031361",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031360/1031360.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0042",
+      "id": "0058",
       "nombre": "Pamputt",
       "variantes": [
         {
@@ -702,7 +1120,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0043",
+      "id": "0059",
       "nombre": "Maestro Tsuru",
       "variantes": [
         {
@@ -715,7 +1133,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0044",
+      "id": "0060",
       "nombre": "Tenshinhan",
       "variantes": [
         {
@@ -735,7 +1153,34 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0045",
+      "id": "0061",
+      "nombre": "Tenshinhan",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Tenshinhan",
+          "cardId": "1031260",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031260/1031260.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Tenshinhan",
+          "cardId": "1031271",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031270/1031270.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Tenshinhan",
+          "cardId": "1031281",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1031280/1031280.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0062",
       "nombre": "Tambourine",
       "variantes": [
         {
@@ -748,7 +1193,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0046",
+      "id": "0063",
       "nombre": "Yajirobe",
       "variantes": [
         {
@@ -761,7 +1206,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0047",
+      "id": "0064",
       "nombre": "Cimbal",
       "variantes": [
         {
@@ -774,7 +1219,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0048",
+      "id": "0065",
       "nombre": "Gran Rey Demonio Piccolo (Anciano)",
       "variantes": [
         {
@@ -801,7 +1246,34 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0049",
+      "id": "0066",
+      "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+          "cardId": "1030770",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1030770/1030770.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+          "cardId": "1030781",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1030780/1030780.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+          "cardId": "1030791",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1030790/1030790.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0067",
       "nombre": "Maestro Roshi",
       "variantes": [
         {
@@ -810,11 +1282,18 @@ const SAGA_DB_SAGA =
           "cardId": "1016640",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1016640/1016640.png",
           "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Maestro Roshi",
+          "cardId": "1016651",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1016650/1016650.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0050",
+      "id": "0068",
       "nombre": "Drum",
       "variantes": [
         {
@@ -827,7 +1306,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0051",
+      "id": "0069",
       "nombre": "Gran Rey Demonio Piccolo",
       "variantes": [
         {
@@ -854,7 +1333,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0052",
+      "id": "0070",
       "nombre": "Goku (Niño)",
       "variantes": [
         {
@@ -874,7 +1353,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0053",
+      "id": "0071",
       "nombre": "Mr Popo",
       "variantes": [
         {
@@ -887,7 +1366,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0054",
+      "id": "0072",
       "nombre": "Kamisama",
       "variantes": [
         {
@@ -907,7 +1386,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0055",
+      "id": "0073",
       "nombre": "Mutaito",
       "variantes": [
         {
@@ -920,7 +1399,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0056",
+      "id": "0074",
       "nombre": "Goku",
       "variantes": [
         {
@@ -940,7 +1419,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0057",
+      "id": "0075",
       "nombre": "Tenshinhan",
       "variantes": [
         {
@@ -960,7 +1439,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0058",
+      "id": "0076",
       "nombre": "Yajirobe",
       "variantes": [
         {
@@ -973,7 +1452,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0059",
+      "id": "0077",
       "nombre": "Tao Pai Pai Cíborg",
       "variantes": [
         {
@@ -986,7 +1465,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0060",
+      "id": "0078",
       "nombre": "Chi-chi",
       "variantes": [
         {
@@ -1020,7 +1499,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0061",
+      "id": "0079",
       "nombre": "Krilin",
       "variantes": [
         {
@@ -1033,7 +1512,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0062",
+      "id": "0080",
       "nombre": "Yamcha",
       "variantes": [
         {
@@ -1046,7 +1525,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0063",
+      "id": "0081",
       "nombre": "Shen",
       "variantes": [
         {
@@ -1073,7 +1552,7 @@ const SAGA_DB_SAGA =
       ]
     },
     {
-      "id": "0064",
+      "id": "0082",
       "nombre": "Goku",
       "variantes": [
         {
@@ -1089,11 +1568,18 @@ const SAGA_DB_SAGA =
           "cardId": "1026531",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1026530/1026530.png",
           "alternativa": true
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Goku",
+          "cardId": "4026541",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/4026540/4026540.png",
+          "alternativa": true
         }
       ]
     },
     {
-      "id": "0065",
+      "id": "0083",
       "nombre": "Ma Junior",
       "variantes": [
         {
@@ -1116,6 +1602,192 @@ const SAGA_DB_SAGA =
           "cardId": "1026561",
           "img": "https://dokkaninfo.com/assets/global/en/character/card/1026560/1026560.png",
           "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0084",
+      "nombre": "Goku (niño) y Arale Norimaki (Crossover)",
+      "variantes": [
+        {
+          "rareza": "SSR",
+          "nombre": "Goku (niño) (Crossover)",
+          "cardId": "1015430",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1015430/1015430.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "UR",
+          "nombre": "Goku (niño) y Krilin (Niño) (Crossover)",
+          "cardId": "1015951",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1015950/1015950.png",
+          "alternativa": true
+        },
+        {
+          "rareza": "LR",
+          "nombre": "Goku (niño) y Arale Norimaki (Crossover)",
+          "cardId": "1016231",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1016230/1016230.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0085",
+      "nombre": "Tao Pai Pai (Crossover)",
+      "variantes": [
+        {
+          "rareza": "SR",
+          "nombre": "Tao Pai Pai",
+          "cardId": "1009070",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009070/1009070.png",
+          "alternativa": false
+        }
+      ]
+    },
+    {
+      "id": "0086",
+      "nombre": "Goku (Gorra de Arale Niño) (Crossover)",
+      "variantes": [
+        {
+          "rareza": "R",
+          "nombre": "Goku (Gorra de Arale Niño) (Crossover)",
+          "cardId": "1009020",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009020/1009020.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SR",
+          "nombre": "Goku (Gorra de Arale Niño) (Crossover)",
+          "cardId": "1010611",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1010610/1010610.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0087",
+      "nombre": "Arale Norimaki (Gi de Goku) (Crossover)",
+      "variantes": [
+        {
+          "rareza": "R",
+          "nombre": "Arale Norimaki (Gi de Goku) (Crossover)",
+          "cardId": "1009010",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009010/1009010.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SR",
+          "nombre": "Arale Norimaki (Gi de Goku) (Crossover)",
+          "cardId": "1010621",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1010620/1010620.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0088",
+      "nombre": "Arale Norimaki FIS (Crossover)",
+      "variantes": [
+        {
+          "rareza": "R",
+          "nombre": "Arale Norimaki FIS (Crossover)",
+          "cardId": "1008950",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1008950/1008950.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SR",
+          "nombre": "Arale Norimaki FIS (Crossover)",
+          "cardId": "1008961",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1008960/1008960.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0089",
+      "nombre": "Arale Norimaki FUE (Crossover)",
+      "variantes": [
+        {
+          "rareza": "R",
+          "nombre": "Arale Norimaki FUE (Crossover)",
+          "cardId": "1008970",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1008970/1008970.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SR",
+          "nombre": "Arale Norimaki FUE (Crossover)",
+          "cardId": "1008981",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1008980/1008980.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0090",
+      "nombre": "Arale Norimaki INT (Crossover)",
+      "variantes": [
+        {
+          "rareza": "R",
+          "nombre": "Arale Norimaki INT (Crossover)",
+          "cardId": "1009040",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009040/1009040.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SR",
+          "nombre": "Arale Norimaki INT (Crossover)",
+          "cardId": "1009521",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009520/1009520.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0091",
+      "nombre": "Arale Norimaki AGI (Crossover)",
+      "variantes": [
+        {
+          "rareza": "R",
+          "nombre": "Arale Norimaki AGI (Crossover)",
+          "cardId": "1008990",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1008990/1008990.png",
+          "alternativa": false
+        },
+        {
+          "rareza": "SR",
+          "nombre": "Arale Norimaki AGI (Crossover)",
+          "cardId": "1009001",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009000/1009000.png",
+          "alternativa": true
+        }
+      ]
+    },
+    {
+      "id": "0092",
+      "nombre": "Obotchaman (Crossover)",
+      "variantes": [
+        {
+          "rareza": "N",
+          "nombre": "Obotchaman (Crossover)",
+          "cardId": "1009050",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009050/1009050.png",
+          "alternativa": false
+        }
+      ]
+    },
+    {
+      "id": "0093",
+      "nombre": "Suppaman (Crossover)",
+      "variantes": [
+        {
+          "rareza": "N",
+          "nombre": "Suppaman",
+          "cardId": "1009030",
+          "img": "https://dokkaninfo.com/assets/global/en/character/card/1009030/1009030.png",
+          "alternativa": false
         }
       ]
     }
