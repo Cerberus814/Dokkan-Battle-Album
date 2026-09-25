@@ -1,0 +1,3451 @@
+<!DOCTYPE html>
+<!--
+  Todo el juego (datos de cartas, CSS y lógica) vive en este único archivo HTML, a propósito,
+  para que se pueda abrir con doble click sin depender de ningún servidor.
+  Las cartas están dentro del bloque de JavaScript, buscá "const SAGAS = [" — ahí adentro cada
+  saga trae su propia imagen promo, el arte de sus sobres, y su lista de cartas. Para sumar una
+  saga nueva a futuro, agregá otro objeto igual a ese, ahí mismo.
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- Las imágenes de las cartas se traen directo de dokkaninfo.com. Muchos sitios de este tipo
+     bloquean la imagen si detectan que el pedido viene con un Referer que no es el de ellos
+     (protección anti-hotlink). Con file:// el navegador no manda Referer (por eso se veían),
+     pero con http://localhost sí lo manda. Esta línea le dice al navegador que no mande Referer
+     en ningún pedido de la página, para que las imágenes se sigan viendo en ambos casos. -->
+<meta name="referrer" content="no-referrer">
+<title>Álbum Dragon Ball · Saga Niño</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-night:#14101f;
+    --bg-night-2:#1d1730;
+    --parchment:#f3e7c9;
+    --parchment-2:#ecdcb4;
+    --ink:#2b2013;
+    --ink-soft:#5a4a34;
+    --orange:#ff6a1a;
+    --orange-deep:#d9500a;
+    --red:#c23b3b;
+    --teal:#2e8f82;
+    --gold:#e0a93a;
+    --n-color:#8a8f98;
+    --r-color:#3f9142;
+    --sr-color:#2f7fd1;
+    --ssr-color:#e0529a;
+    --ur-color:#e3b23c;
+    --lr-1:#ff6a1a; --lr-2:#ff3d7f; --lr-3:#8659c9; --lr-4:#e3b23c;
+    --card-ratio: 426 / 568;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(circle at 15% 0%, #241a3d 0%, transparent 45%),
+      radial-gradient(circle at 85% 10%, #2a1c33 0%, transparent 40%),
+      var(--bg-night);
+    color:var(--ink);
+    font-family:'Nunito', sans-serif;
+    min-height:100vh;
+    padding: env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+  }
+
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 18px 18px 80px; }
+
+  /* ---------- Nav ---------- */
+  .mainnav{
+    position:sticky; top:0; z-index:40;
+    background: linear-gradient(180deg, #1a1430, #120e22);
+    border-bottom: 3px solid var(--orange);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.4);
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+  .nav-inner{
+    max-width: 980px; margin:0 auto; padding: 10px 18px 0;
+    display:flex; flex-direction:column; gap:2px;
+  }
+  .nav-top{ position:relative; display:flex; align-items:center; justify-content:center; padding:2px 0 4px; }
+  .nav-logo{ height:clamp(58px, 11vw, 82px); width:auto; display:block; filter: drop-shadow(2px 3px 0 rgba(0,0,0,0.35)); }
+  @media (max-width: 480px){
+    .nav-top{ flex-direction:column; gap:6px; }
+    .coin-pill{ position:static; transform:none; }
+  }
+  .nav-items{ display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap; }
+  .nav-item{ position:relative; display:flex; align-items:stretch; }
+  .nav-item + .nav-item::before{
+    content:""; width:1px; margin:12px 0; background:#3a2f52; align-self:stretch;
+  }
+  .nav-btn{
+    background:none; border:none; cursor:pointer; font-family:'Bungee', sans-serif;
+    font-size:12px; letter-spacing:0.6px; color:#d8cdef; padding:16px 16px 13px;
+    border-bottom:3px solid transparent; display:flex; align-items:center; gap:6px;
+    transition: color .15s ease, border-color .15s ease;
+  }
+  .nav-btn:hover{ color:#fff; }
+  .nav-btn.active{ color:var(--orange); border-bottom-color:var(--orange); }
+
+  .coin-pill{
+    display:flex; align-items:center; gap:6px; background:#2a2340; border:2px solid #4a4460;
+    border-radius:999px; padding:6px 12px 6px 6px;
+    position:absolute; right:0; top:50%; transform:translateY(-50%);
+  }
+  .coin-pill img, .coin-pill svg{ width:24px; height:24px; }
+  .coin-pill span{ font-family:'Bungee'; font-size:13px; color:var(--gold); }
+
+  /* ---------- Vistas ---------- */
+  .view{ display:none; }
+  .view.active{ display:block; }
+
+  /* ---------- Pack section ---------- */
+  .pack-panel{
+    background: linear-gradient(180deg, var(--bg-night-2), #150f24);
+    border:2px solid #3a2f52; border-radius:18px; padding:22px;
+    display:flex; align-items:center; gap:24px; flex-wrap:wrap; justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .pack-visual{
+    width:190px; aspect-ratio: 426/568; position:relative;
+    background: transparent; box-shadow:none;
+    display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+    cursor:pointer; transition: transform .2s ease; overflow:visible;
+  }
+  .pack-visual:hover{ transform: translateY(-4px) rotate(-1deg); }
+  .pack-visual.disabled{ cursor:default; filter:grayscale(0.6) brightness(0.6); }
+  .pack-visual.disabled:hover{ transform:none; }
+  .pack-stack{ position:absolute; inset:0; }
+  .pack-stack .stack-item{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:contain;
+    display:block; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.5));
+  }
+  .pack-stack .stack-item.stack-empty-hint{ opacity:0.4; filter: grayscale(0.7) drop-shadow(0 8px 12px rgba(0,0,0,0.4)); }
+  .pack-stack-badge{
+    display:none; position:absolute; top:-8px; right:-8px; min-width:26px; height:26px; padding:0 6px;
+    border-radius:999px; background:var(--gold); color:#2b2013; font-family:'Bungee'; font-size:12px;
+    align-items:center; justify-content:center; box-shadow:0 3px 8px rgba(0,0,0,0.4); z-index:10;
+  }
+
+  /* ---------- Sobre a tamaño completo (previsualización + apertura) ---------- */
+  .pack-big-row{ display:flex; align-items:center; gap:14px; }
+  .pack-arrow{
+    display:none; width:42px; height:42px; border-radius:50%; flex:0 0 auto;
+    background:#241c38; border:2px solid var(--orange); color:#f6ecd2; font-size:22px;
+    cursor:pointer; align-items:center; justify-content:center; line-height:1;
+  }
+  .pack-arrow.show{ display:flex; }
+  .pack-arrow:active{ transform:scale(0.92); }
+  .pack-big{
+    position:relative; display:inline-block; cursor:pointer; line-height:0;
+  }
+  .pack-big.no-art{
+    width:min(260px, 72vw); aspect-ratio:426/568; border:2px dashed rgba(255,255,255,0.4);
+    border-radius:14px; display:flex; align-items:center; justify-content:center;
+  }
+  .pack-big.no-art img.full{ display:none; }
+  .pack-big.no-art::after{ content:"Falta imagenes/sobredbsaga.png"; font-family:'Nunito'; font-size:12px; color:#c9bfe0; text-align:center; padding:16px; }
+  .pack-big img.full{
+    display:block; width:auto; height:auto; max-width:min(300px, 78vw); max-height:65vh;
+    filter: drop-shadow(0 18px 34px rgba(0,0,0,0.6));
+  }
+  .pack-big .half{ position:absolute; left:0; width:100%; overflow:hidden; display:none; }
+  .pack-big .half.top{ top:0; height:15%; }
+  .pack-big .half.bottom{ top:15%; height:85%; }
+  .pack-big .half img{ position:absolute; left:0; width:100%; display:block; filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)); }
+  .pack-big .half.top img{ top:0; height:666.7%; }
+  .pack-big .half.bottom img{ top:-17.65%; height:117.65%; }
+  .pack-big.opening img.full{ visibility:hidden; }
+  .pack-big.opening .half{ display:block; }
+  .pack-big.opening .half.top{ animation: splitUp .45s ease-in forwards; }
+  .pack-big.opening .half.bottom{ animation: splitDown .45s ease-in forwards; }
+  @keyframes splitUp{ 0%{ transform:translateY(0); opacity:1; } 100%{ transform:translateY(-115%); opacity:0; } }
+  @keyframes splitDown{ 0%{ transform:translateY(0); opacity:1; } 100%{ transform:translateY(120%); opacity:0; } }
+
+  .pack-info{ flex:1 1 260px; min-width:220px; }
+  .ticket-badge{
+    display:inline-block; font-family:'Nunito'; font-weight:800; font-size:12px; color:var(--gold);
+    background:rgba(224,169,58,0.12); border:1px solid rgba(224,169,58,0.5); border-radius:999px;
+    padding:5px 12px; margin-bottom:10px;
+  }
+  .pack-info h2{ font-family:'Bungee'; font-size:18px; color:#f6ecd2; margin:0 0 6px; }
+  .pack-info p{ margin:0 0 14px; color:#c9bfe0; font-size:14px; line-height:1.5;}
+  .btn{
+    font-family:'Nunito'; font-weight:800; font-size:15px; border:none; border-radius:999px;
+    padding:12px 26px; cursor:pointer; color:#fff;
+    background: linear-gradient(180deg, var(--orange), var(--orange-deep));
+    box-shadow: 0 4px 0 #8a3305, 0 8px 16px rgba(0,0,0,0.35);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .btn:active{ transform: translateY(3px); box-shadow: 0 1px 0 #8a3305; }
+  .btn[disabled]{ background:#4a4460; color:#9b93b3; box-shadow:none; cursor:default; }
+  .btn.secondary{ background:transparent; color:#f6ecd2; box-shadow:none; border:2px solid #4a4460; padding:10px 18px; font-size:13px; }
+  .btn.small{ padding:8px 16px; font-size:12px; }
+  .timer{ font-family:'Bungee'; font-size:20px; color:var(--gold); letter-spacing:1px; }
+
+  /* ---------- Extra packs / codes / test mode ---------- */
+  .extras-row{ display:flex; gap:12px; flex-wrap:wrap; align-items:stretch; margin-bottom:18px; }
+  .extra-box{
+    flex:1 1 240px; background:var(--bg-night-2); border:2px solid #3a2f52; border-radius:14px;
+    padding:14px 16px; color:#e7deff;
+  }
+  .extra-box h3{ font-family:'Bungee'; font-size:13px; margin:0 0 8px; color:#f6ecd2; }
+  .extra-box-promo{
+    display:flex; align-items:center; justify-content:center; padding:0; overflow:hidden; min-height:120px;
+  }
+  .extra-box-promo .promo-img{ width:100%; height:100%; object-fit:cover; display:block; border-radius:12px; }
+  .extra-box-promo.promo-empty{
+    border:2px dashed #4a4460;
+    background: repeating-linear-gradient(45deg, #1c1730, #1c1730 10px, #241d3b 10px, #241d3b 20px);
+  }
+  .extra-box-promo.promo-empty::before{
+    content:"Espacio para imagen promocional (imagenes/promo.png)";
+    font-family:'Nunito'; font-weight:800; font-size:12px; color:#9d93b8; text-align:center; padding:14px;
+  }
+  .code-row{ display:flex; gap:8px; }
+  .code-row input{
+    flex:1; min-width:0; border-radius:8px; border:2px solid #4a4460; background:#0f0c1a;
+    color:#f6ecd2; padding:9px 10px; font-family:'Nunito'; font-weight:700; text-transform:uppercase;
+  }
+  .code-msg{ font-size:12px; margin-top:8px; min-height:14px; }
+  .code-msg.ok{ color:#7ee08a; }
+  .code-msg.err{ color:#ff8484; }
+  .extra-sobres-line{ font-size:13px; color:#c9bfe0; margin-bottom:8px; }
+
+  /* ---------- Stats / toolbar ---------- */
+  .toolbar{ display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px; }
+  .progress-label{ font-family:'Bungee'; color:#f6ecd2; font-size:15px; }
+  .progress-label-alt{ font-size:12px; margin-top:12px; color:#d8a9e0; }
+  .progress-bar{ width:100%; height:10px; background:#2a2340; border-radius:999px; overflow:hidden; margin-top:6px; }
+  .progress-bar > div{ height:100%; background:linear-gradient(90deg, var(--orange), var(--gold)); }
+  .progress-bar.alt > div{ background:linear-gradient(90deg, var(--lr-3), var(--lr-2)); }
+  .toolbar-actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* ---------- Album ---------- */
+  .album{
+    background: var(--parchment);
+    background-image: repeating-linear-gradient(0deg, rgba(0,0,0,0.02) 0 1px, transparent 1px 26px);
+    border-radius: 16px; padding: 22px;
+    box-shadow: 0 14px 30px rgba(0,0,0,0.4), inset 0 0 40px rgba(120,90,40,0.15);
+    border: 6px solid #4a3520;
+  }
+  .grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); gap:14px; }
+  .slot{
+    aspect-ratio: var(--card-ratio); border-radius:8px; position:relative; cursor:pointer; overflow:hidden;
+    background: var(--parchment-2); border: 2px dashed #b9a06a; display:flex; align-items:center; justify-content:center;
+  }
+  .slot.filled{ border-style:solid; border-color:#3a2a15; box-shadow: 0 4px 10px rgba(0,0,0,0.25); }
+  .slot.is-lr-slot{ box-shadow: 0 0 14px 3px rgba(255,140,60,0.55); }
+  .slot .num{ font-family:'Bungee'; color:#a98d54; font-size:13px; }
+  .slot img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .slot .rarity-badge{ position:absolute; bottom:4px; left:4px; width:32px; height:32px; filter:drop-shadow(0 2px 3px rgba(0,0,0,0.5)); }
+  .slot .alt-tag{
+    position:absolute; top:3px; right:3px; font-size:8px; font-weight:800; color:#2b2013;
+    background:#fff; padding:1px 4px; border-radius:4px;
+  }
+  .slot.new-land{ animation: stick 0.6s cubic-bezier(.3,1.4,.5,1) both; transform-origin: 50% 20%; }
+  @keyframes stick{
+    0%{ transform: translateY(-55%) rotate(-9deg) scale(1.12); opacity:0; }
+    45%{ transform: translateY(4%) rotate(3deg) scale(1.05); opacity:1; }
+    68%{ transform: translateY(-1.5%) rotate(-1.5deg) scale(0.96); }
+    85%{ transform: translateY(0.5%) rotate(0.5deg) scale(1.02); }
+    100%{ transform: translateY(0) rotate(0deg) scale(1); }
+  }
+  .slot.pending{ border-style:solid; border-color:var(--gold); cursor:pointer; animation: pendingPulse 1.4s ease-in-out infinite; }
+  .slot.pending .pending-label{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center; text-align:center;
+    background:rgba(20,16,31,0.55); color:#fff; font-family:'Nunito'; font-weight:800; font-size:11px; padding:6px;
+    pointer-events:none;
+  }
+  @keyframes pendingPulse{ 0%,100%{ box-shadow: 0 0 0 0 rgba(224,169,58,0.55); } 50%{ box-shadow: 0 0 0 8px rgba(224,169,58,0); } }
+
+  /* ---------- Foil effect (shop cosmetic) ----------
+     Configuración manual fácil: tocá estas 3 variables para ajustar el efecto.
+     --foil-duration      : duración de un ciclo completo del brillo.
+     --foil-opacity       : intensidad máxima del brillo (0 a 1).
+     Los % dentro de @keyframes foilsweep controlan CUÁNDO se hace transparente:
+     0%  = arranca invisible · 12% = ya visible al máximo · 70% = empieza a apagarse · 100% = invisible de nuevo.
+     Subí el "70%" para que dure más visible, o bajalo para que se apague antes. */
+  :root{
+    --foil-duration: 3.0s;
+    --foil-opacity: 0.9;
+  }
+  .foil-effect{
+    position:relative;
+    /* fuerza el recorte correcto a las esquinas redondeadas en Safari/iOS */
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+  .foil-effect::after{
+    content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; mix-blend-mode:overlay;
+    background: linear-gradient(115deg, transparent 20%, rgba(255,255,255,0.85) 40%, rgba(255,255,255,0.1) 50%, transparent 65%),
+                linear-gradient(115deg, rgba(255,120,255,0.4), rgba(120,220,255,0.4), rgba(255,220,120,0.4));
+    background-size: 250% 250%, 250% 250%;
+    animation: foilsweep var(--foil-duration) linear infinite;
+  }
+  @keyframes foilsweep{
+    0%   { background-position: 0% 0%, 0% 0%;     opacity: 0; }
+    12%  { opacity: var(--foil-opacity); }
+    70%  { opacity: var(--foil-opacity); }
+    100% { background-position: 100% 100%, 100% 100%; opacity: 0; }
+  }
+
+  /* ---------- Modal (reveal + detail) ---------- */
+  .overlay{
+    position:fixed; inset:0; background:rgba(10,7,18,0.86); display:none;
+    align-items:center; justify-content:center; z-index:50; padding:20px; overflow-y:auto;
+  }
+  .overlay.show{ display:flex; }
+  .modal-card{
+    width:min(240px, 60vw); aspect-ratio: var(--card-ratio); border-radius:14px; position:relative;
+    overflow:hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.6); flex:0 0 auto;
+  }
+  .modal-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .modal-card-canvas{ width:100%; height:100%; display:none; }
+  .modal-card.lwf-active img{ display:none; }
+  .modal-card.lwf-active .modal-card-canvas{ display:block; }
+  .modal-wrap{ display:flex; flex-direction:column; align-items:center; gap:14px; max-width:640px; margin:auto; }
+  .modal-card.reveal{ animation: flipin 0.55s ease backwards; }
+  @keyframes flipin{
+    0%{ transform: rotateY(90deg) scale(0.6); opacity:0; }
+    100%{ transform: rotateY(0) scale(1); opacity:1; }
+  }
+  .modal-card.is-LR{ box-shadow: 0 0 40px 6px rgba(255,140,60,0.55), 0 20px 50px rgba(0,0,0,0.6); }
+  .modal-title{ font-family:'Bungee'; color:#f6ecd2; text-align:center; font-size:16px; }
+  .modal-sub{ color:#c9bfe0; font-size:12px; text-align:center; margin-top:-6px; display:flex; align-items:center; gap:6px; justify-content:center;}
+  .modal-sub .rarity-badge{ width:26px; height:26px; }
+  .pull-grid{ display:flex; gap:14px; flex-wrap:wrap; justify-content:center; }
+  .pull-item{ display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .dup-tag{ font-size:11px; font-weight:800; color:var(--gold); display:flex; align-items:center; gap:3px; }
+  .dup-tag svg{ width:13px; height:13px; }
+  .variant-switch{ display:flex; gap:8px; flex-wrap:wrap; justify-content:center; }
+  .variant-switch button{
+    font-family:'Nunito'; font-weight:700; font-size:12px; border-radius:8px; border:2px solid #4a4460;
+    background:transparent; color:#f6ecd2; padding:6px 10px; cursor:pointer; display:flex; align-items:center; gap:5px;
+  }
+  .variant-switch button.active{ background:var(--orange); border-color:var(--orange-deep); }
+  .variant-switch .rarity-badge{ width:22px; height:22px; }
+  .close-x{ position:absolute; top:16px; right:20px; color:#f6ecd2; font-size:26px; cursor:pointer; background:none; border:none; line-height:1; }
+
+  /* ---------- Share ---------- */
+  .share-row{ margin-top:22px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; justify-content:center; }
+  .share-row span{ font-size:13px; color:#c9bfe0; font-family:'Nunito'; font-weight:700; }
+  .share-btn{
+    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    color:#fff; text-decoration:none; border:none; cursor:pointer; font-size:16px;
+  }
+  .share-btn.wa{ background:#25D366; } .share-btn.tw{ background:#111; } .share-btn.fb{ background:#1877F2; } .share-btn.cp{ background:#4a4460; }
+
+  footer{ text-align:center; color:#7c7395; font-size:12px; margin-top:26px; }
+
+  /* ---------- Tienda ---------- */
+  .baba-float{
+    display:block;
+    filter: drop-shadow(0 16px 22px rgba(0,0,0,0.5));
+    animation: babaFloat 3.4s ease-in-out infinite;
+  }
+  @keyframes babaFloat{
+    0%,100%{ transform: translateY(0) rotate(-1deg); }
+    50%{ transform: translateY(-16px) rotate(1deg); }
+  }
+  /* Baba asomada como vendedora, integrada al panel en vez de flotar suelta arriba */
+  .shop-baba-panel{ position:relative; overflow:visible; padding-left:180px; justify-content:flex-start; margin-top:26px; }
+  .shop-baba-img{
+    position:absolute; left:-6px; bottom:-14px; width:170px; max-width:38vw; height:auto; z-index:2;
+  }
+  .shop-baba-info{ flex:1 1 220px; min-width:200px; }
+  @media (max-width: 620px){
+    .shop-baba-panel{ padding-left:18px; padding-top:130px; flex-direction:column; margin-top:60px; }
+    .shop-baba-img{ left:50%; bottom:auto; top:-40px; transform:translateX(-50%); width:130px; max-width:44vw; }
+  }
+  .shop-grid{ display:grid; grid-template-columns: repeat(auto-fit, minmax(230px,1fr)); gap:16px; margin-top:18px; }
+  .shop-item{
+    background: var(--bg-night-2); border:2px solid #3a2f52; border-radius:16px; padding:18px;
+    display:flex; flex-direction:column; gap:10px; align-items:center; text-align:center;
+  }
+  .shop-item .icon-wrap{ width:64px; height:64px; display:flex; align-items:center; justify-content:center; }
+  .shop-item .icon-wrap svg{ width:100%; height:100%; }
+  .shop-item .icon-wrap.icon-wrap-big{ width:92px; height:92px; font-size:52px; }
+  .shop-item .icon-wrap.icon-wrap-pack{ width:96px; height:128px; }
+  .shop-item-legendary{ border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset, 0 0 18px rgba(224,169,58,0.25); }
+  .shop-limit{ font-size:11px; color:#9d93b8; margin-top:-4px; }
+  .shop-pack-img{ width:100%; height:100%; object-fit:contain; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.5)); }
+  .shop-item h4{ font-family:'Bungee'; font-size:14px; color:#f6ecd2; margin:0; }
+  .shop-item p{ font-size:12px; color:#c9bfe0; margin:0; line-height:1.4; }
+  .shop-price{ display:flex; align-items:center; gap:6px; font-family:'Bungee'; color:var(--gold); font-size:14px; }
+  .shop-price svg{ width:18px; height:18px; }
+  .coming-soon{ opacity:0.55; }
+  .coming-soon .btn{ pointer-events:none; }
+  .shop-note{ font-size:12px; color:#8a80a8; text-align:center; margin-top:18px; }
+
+  .foil-picker-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(76px,1fr)); gap:10px; max-width:520px; max-height:50vh; overflow-y:auto; padding:6px; }
+  .foil-picker-grid .pslot{ aspect-ratio: var(--card-ratio); border-radius:6px; overflow:hidden; cursor:pointer; border:2px solid #4a4460; position:relative; }
+  .foil-picker-grid .pslot img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .foil-picker-grid .pslot.has-foil{ border-color: var(--gold); }
+  .foil-picker-grid .pslot .pf-tag{ position:absolute; bottom:2px; left:2px; right:2px; font-size:8px; text-align:center; background:rgba(0,0,0,0.6); color:#fff; padding:1px; }
+
+  /* ---------- Placeholder views ---------- */
+  .placeholder-box{
+    background: var(--bg-night-2); border:2px dashed #3a2f52; border-radius:16px; padding:40px 20px;
+    text-align:center; color:#c9bfe0; margin-top:10px;
+  }
+  .placeholder-box h3{ font-family:'Bungee'; color:#f6ecd2; font-size:16px; margin:0 0 8px; }
+
+  /* ---------- Logros ---------- */
+  .ach-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); gap:14px; margin-top:16px; }
+  .ach-card{
+    display:flex; gap:14px; align-items:center; background:var(--bg-night-2); border:2px solid #3a2f52;
+    border-radius:14px; padding:14px; opacity:0.55; filter:grayscale(0.8);
+  }
+  .ach-card.unlocked{ opacity:1; filter:none; border-color: var(--gold); }
+  .ach-icon{
+    width:52px; height:52px; border-radius:10px; flex:0 0 auto; background:#1a1430;
+    display:flex; align-items:center; justify-content:center; font-size:26px; overflow:hidden;
+  }
+  .ach-icon img{ width:100%; height:100%; object-fit:cover; }
+  .ach-text h4{ font-family:'Bungee'; font-size:13px; color:#f6ecd2; margin:0 0 4px; }
+  .ach-text p{ font-size:12px; color:#c9bfe0; margin:0 0 4px; line-height:1.4; }
+  .ach-reward{ font-size:11px; color:var(--gold); font-weight:800; }
+  .ach-progress{ font-size:11px; color:#8a80a8; margin-top:2px; }
+
+  /* ---------- Aviso de logro (estilo Steam) ---------- */
+  .ach-toast{
+    position:fixed; top:16px; right:16px; z-index:80; display:flex; gap:12px; align-items:center;
+    background:linear-gradient(135deg, #1a1430, #241c38); border:2px solid var(--gold); border-radius:12px;
+    padding:12px 16px; box-shadow:0 12px 28px rgba(0,0,0,0.5); max-width:300px;
+    transform: translateX(120%); opacity:0; transition: transform .4s ease, opacity .4s ease;
+    top: calc(16px + env(safe-area-inset-top, 0px));
+  }
+  .ach-toast.show{ transform: translateX(0); opacity:1; }
+  .ach-toast-icon{
+    width:44px; height:44px; border-radius:8px; flex:0 0 auto; background:#1a1430;
+    display:flex; align-items:center; justify-content:center; font-size:22px; overflow:hidden;
+  }
+  .ach-toast-icon img{ width:100%; height:100%; object-fit:cover; }
+  .ach-toast-label{ font-family:'Nunito'; font-weight:800; font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; }
+  .ach-toast-title{ font-family:'Bungee'; font-size:13px; color:#f6ecd2; margin-top:2px; }
+
+  /* ---------- Video de figurita LR ---------- */
+  .lr-video-overlay{
+    position:fixed; inset:0; background:#000; display:none; z-index:95;
+    align-items:center; justify-content:center; flex-direction:column; gap:16px;
+    padding: env(safe-area-inset-top,0px) 0 env(safe-area-inset-bottom,0px);
+  }
+  .lr-video-overlay.show{ display:flex; }
+  .lr-video{ width:min(100vw, 420px); max-height:80vh; aspect-ratio:9/16; object-fit:cover; background:#000; border-radius:10px; }
+  .lr-video-skip{ color:#fff; }
+
+  /* ---------- Perfil: Top Loaders / Expositor ---------- */
+  .perfil-section{
+    background: var(--bg-night-2); border:2px solid #3a2f52; border-radius:16px;
+    padding:18px; margin-top:18px;
+  }
+  .perfil-section h3{ font-family:'Bungee'; font-size:15px; color:#f6ecd2; margin:0 0 6px; }
+  .perfil-section h4.perfil-subtitle{ font-family:'Bungee'; font-size:12px; color:#c9bfe0; margin:18px 0 8px; }
+  .perfil-desc{ font-size:12px; color:#c9bfe0; margin:0 0 10px; line-height:1.4; }
+  .tl-grid{ display:grid; grid-template-columns: repeat(auto-fill, minmax(150px,1fr)); gap:12px; }
+  .tl-card{
+    background:#1a1430; border:2px solid #3a2f52; border-radius:12px; padding:10px;
+    display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center;
+  }
+  .tl-img-wrap{ position:relative; }
+  .tl-card .tl-img-wrap{ width:100%; aspect-ratio: 426/568; border-radius:8px; overflow:hidden; }
+  .tl-card .tl-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .tl-card .tl-rarity{ width:24px; height:24px; position:absolute; bottom:3px; left:3px; z-index:3; }
+  .tl-card .tl-actions{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
+  .tl-card .btn.small{ font-size:11px; padding:6px 10px; }
+  .tl-empty-note{ font-size:12px; color:#8a80a8; padding:10px 0; grid-column: 1/-1; text-align:center; }
+
+  /* ---- Case de Top Loader: plástico rígido transparente, como uno real ---- */
+  .nylon-wrap{
+    border:4px solid rgba(255,255,255,0.5) !important;
+    box-shadow: inset 0 0 14px rgba(255,255,255,0.18), inset 0 0 2px rgba(255,255,255,0.5), 0 3px 8px rgba(0,0,0,0.35);
+    background: rgba(255,255,255,0.06);
+  }
+  .nylon-wrap::before{
+    content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
+    background: linear-gradient(115deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.02) 26%,
+      rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.02) 74%, rgba(255,255,255,0.24) 100%);
+    mix-blend-mode: overlay;
+  }
+
+  /* ---- Case de Expositor: slab estilo grading, borde blanco con etiqueta de calidad ---- */
+  .grade-badge{
+    display:inline-flex; align-items:center; justify-content:center; font-family:'Bungee'; font-size:12px;
+    width:26px; height:26px; border-radius:50%; color:#1a1430; position:absolute; top:3px; left:3px;
+    box-shadow:0 2px 6px rgba(0,0,0,0.4); z-index:3;
+  }
+  .grade-Z{ background:linear-gradient(135deg,#ff6a1a,#ff3d7f,#8659c9,#e3b23c); color:#fff; }
+  .grade-A{ background:#8659c9; color:#fff; }
+  .grade-B{ background:#3e8fb0; color:#fff; }
+  .grade-C{ background:#7c8a99; color:#fff; }
+  .grade-badge-big{
+    font-family:'Bungee'; font-size:34px; width:74px; height:74px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.5);
+  }
+  .card-slab{
+    position:relative; width:100%; height:100%; display:flex; flex-direction:column; gap:4px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(228,228,236,0.88));
+    border-radius:10px; padding:5px; box-shadow:0 6px 16px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.7);
+  }
+  .card-slab::after{
+    content:""; position:absolute; inset:0; border-radius:10px; pointer-events:none; z-index:3;
+    background: linear-gradient(115deg, rgba(255,255,255,0.55) 0%, transparent 26%, transparent 68%, rgba(255,255,255,0.32) 100%);
+    mix-blend-mode: overlay;
+  }
+  .slab-label{
+    flex:0 0 auto; background:#efe9d8; border-radius:5px; display:flex; align-items:center; justify-content:center;
+    gap:4px; padding:3px 4px; font-family:'Bungee'; font-size:11px; color:#2b2013;
+  }
+  .slab-label .slab-grade{ font-weight:800; }
+  .slab-label .slab-grade.grade-Z{ background:linear-gradient(135deg,#ff6a1a,#ff3d7f,#8659c9,#e3b23c); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .slab-label .slab-grade.grade-A{ color:#7c4fd1; }
+  .slab-label .slab-grade.grade-B{ color:#2f7fd1; }
+  .slab-label .slab-grade.grade-C{ color:#5f6a73; }
+  .slab-window{ flex:1; border-radius:6px; overflow:hidden; background:#1a1430; position:relative; }
+  .slab-window img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  .expo-showcase{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap:10px; margin-bottom:6px;
+  }
+  .expo-slot{
+    aspect-ratio: 426/568; border-radius:10px; border:2px dashed #4a4460; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center; background:#1a1430;
+  }
+  .expo-slot.filled{ border:none; background:none; overflow:visible; }
+  .expo-slot img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .expo-slot .num{ font-family:'Nunito'; font-size:10px; color:#5a4a80; }
+
+  /* ---- Mini previews del case, para la tienda ---- */
+  .icon-wrap.icon-wrap-tall{ width:64px; height:86px; }
+  .mini-card-fill{ width:100%; height:100%; background:linear-gradient(160deg, var(--orange), #8659c9); }
+
+  /* ---- Header de perfil: avatar / nick / bio editables ---- */
+  .profile-header{ display:flex; gap:16px; align-items:center; flex-wrap:wrap; margin-bottom:14px; }
+  .profile-avatar{
+    width:76px; height:76px; border-radius:50%; flex:0 0 auto; position:relative; cursor:pointer;
+    border:3px solid var(--orange); overflow:hidden; background:#1a1430;
+    display:flex; align-items:center; justify-content:center; font-size:30px;
+  }
+  .profile-avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .profile-avatar .avatar-edit-hint{
+    position:absolute; inset:0; background:rgba(0,0,0,0.55); color:#fff; font-size:10px; font-family:'Nunito'; font-weight:800;
+    display:flex; align-items:center; justify-content:center; text-align:center; opacity:0; transition:opacity .15s;
+  }
+  .profile-avatar:hover .avatar-edit-hint{ opacity:1; }
+  .profile-fields{ flex:1 1 220px; min-width:200px; }
+  .profile-nick{
+    font-family:'Bungee'; font-size:16px; color:#f6ecd2; background:transparent; border:none; border-bottom:2px solid transparent;
+    padding:2px 0; width:100%; max-width:280px;
+  }
+  .profile-nick:focus{ outline:none; border-bottom-color: var(--orange); }
+  .profile-bio{
+    font-family:'Nunito'; font-size:12px; color:#c9bfe0; background:transparent; border:none; border-bottom:1px dashed transparent;
+    padding:4px 0; width:100%; max-width:420px; resize:none; margin-top:4px;
+  }
+  .profile-bio:focus{ outline:none; border-bottom-color:#4a4460; }
+
+
+  @media (max-width:520px){ .grid{ grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap:8px; } }
+</style>
+</head>
+<body>
+
+<nav class="mainnav">
+  <div class="nav-inner">
+    <div class="nav-top">
+      <img src="imagenes/logo.png" alt="Dragon Ball Z Dokkan Battle Figuritas" class="nav-logo" onerror="this.style.display='none'">
+      <div class="coin-pill" id="coinPill">
+        <span id="coinIcon"></span>
+        <span id="coinAmount">0</span>
+      </div>
+    </div>
+    <div class="nav-items">
+      <div class="nav-item"><button class="nav-btn active" data-view="album">Álbum</button></div>
+      <div class="nav-item"><button class="nav-btn" data-view="tienda">Tienda de Baba</button></div>
+      <div class="nav-item"><button class="nav-btn" data-view="perfil">Perfil</button></div>
+      <div class="nav-item"><button class="nav-btn" data-view="logros">Logros</button></div>
+      <div class="nav-item"><button class="nav-btn" data-view="contacto">Contacto</button></div>
+      <div class="nav-item"><button class="nav-btn" data-view="noticias">Noticias</button></div>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ============ VISTA ÁLBUM ============ -->
+  <section class="view active" id="view-album">
+
+    <div class="pack-panel">
+      <div class="pack-visual" id="packVisual">
+        <div class="pack-stack" id="packStack"></div>
+        <div class="pack-stack-badge" id="packStackBadge"></div>
+      </div>
+      <div class="pack-info">
+        <h2>Sobre diario · 5 figuritas</h2>
+        <p id="packText">Tenés un sobre disponible. Cada sobre trae 5 figuritas, con buena chance de traer al menos una SSR o superior.</p>
+        <div id="ticketBadge" class="ticket-badge" style="display:none;">🎫 Ticket de la suerte activo</div>
+        <div id="packAction"></div>
+      </div>
+    </div>
+
+    <div class="extras-row">
+      <div class="extra-box">
+        <h3>CÓDIGO DE CANJE</h3>
+        <div class="extra-sobres-line" id="extraSobresLine">Sobres en tu pila: 0</div>
+        <div class="code-row">
+          <input type="text" id="codeInput" placeholder="Ingresá tu código">
+          <button class="btn small" id="codeBtn">Canjear</button>
+        </div>
+        <div class="code-msg" id="codeMsg"></div>
+      </div>
+      <div class="extra-box extra-box-promo">
+        <img src="imagenes/promo.png" alt="Promoción" class="promo-img" onerror="this.style.display='none'; this.parentElement.classList.add('promo-empty');">
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div>
+        <div class="progress-label" id="progressLabel">0 / 63 conseguidas</div>
+        <div class="progress-bar"><div id="progressFill" style="width:0%"></div></div>
+        <div class="progress-label progress-label-alt" id="progressAltLabel">0 / 0 alternativas conseguidas</div>
+        <div class="progress-bar alt"><div id="progressAltFill" style="width:0%"></div></div>
+      </div>
+      <div class="toolbar-actions">
+        <button class="btn secondary" id="exportBtn">Exportar progreso</button>
+        <button class="btn secondary" id="importBtn">Importar</button>
+        <button class="btn secondary" id="resetBtn">Reiniciar</button>
+        <input type="file" id="importFile" accept="application/json" style="display:none">
+      </div>
+    </div>
+
+    <div class="album"><div class="grid" id="grid"></div></div>
+
+    <div class="share-row">
+      <span>Compartir mi álbum:</span>
+      <a class="share-btn wa" id="shareWA" title="WhatsApp" target="_blank" rel="noopener">🟢</a>
+      <a class="share-btn tw" id="shareTW" title="X / Twitter" target="_blank" rel="noopener">✕</a>
+      <a class="share-btn fb" id="shareFB" title="Facebook" target="_blank" rel="noopener">f</a>
+      <button class="share-btn cp" id="shareCopy" title="Copiar texto">⧉</button>
+    </div>
+  </section>
+
+  <!-- ============ VISTA TIENDA ============ -->
+  <section class="view" id="view-tienda">
+    <div class="pack-panel shop-baba-panel" style="margin-bottom:6px;">
+      <img src="imagenes/UranaiBaba.png" alt="Uranai Baba" class="baba-float shop-baba-img" onerror="this.style.display='none'">
+      <div class="pack-info shop-baba-info">
+        <h2>Tienda de Baba</h2>
+        <p>Las figuritas repetidas se convierten automáticamente en <strong>monedas rojas</strong>. Usalas acá para conseguir más sobres o darle un efecto especial a tus figuritas favoritas.</p>
+      </div>
+    </div>
+    <div class="shop-grid">
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-pack"><img src="imagenes/sobredbsaga.png" alt="Sobre de 5" class="shop-pack-img" onerror="this.style.display='none'"></div>
+        <h4>Sobre de 5 figuritas</h4>
+        <p>Se suma a tu pila de sobres para que lo abras cuando quieras.</p>
+        <div class="shop-price"><span id="shopPackPriceIcon"></span><span id="shopPackPrice"></span></div>
+        <div class="shop-limit" id="limit_shop5"></div>
+        <button class="btn small" id="buyPackBtn">Comprar</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-pack"><img src="imagenes/sobredbsaga2.png" alt="Sobre de 10" class="shop-pack-img" onerror="this.style.display='none'"></div>
+        <h4>Sobre de 10 figuritas</h4>
+        <p>La versión grande del sobre: 10 figuritas de una sola vez. Se suma a tu pila.</p>
+        <div class="shop-price"><span id="shopPack10PriceIcon"></span><span id="shopPack10Price"></span></div>
+        <div class="shop-limit" id="limit_shop10"></div>
+        <button class="btn small" id="buyPack10Btn">Comprar</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-pack"><img src="imagenes/sobredbsagaE.png" alt="Sobre exclusivo" class="shop-pack-img" onerror="this.style.display='none'"></div>
+        <h4>Sobre exclusivo</h4>
+        <p>Buenas chances de traer una figurita UR o superior. Se suma a tu pila con su propio diseño.</p>
+        <div class="shop-price"><span id="shopExclusivePriceIcon"></span><span id="shopExclusivePrice"></span></div>
+        <div class="shop-limit" id="limit_shopE"></div>
+        <button class="btn small" id="buyExclusiveBtn">Comprar</button>
+      </div>
+      <div class="shop-item shop-item-legendary">
+        <div class="icon-wrap icon-wrap-pack"><img src="imagenes/sobredbsagaL.png" alt="Sobre Legendario" class="shop-pack-img" onerror="this.style.display='none'"></div>
+        <h4>Sobre Legendario</h4>
+        <p>El más caro de todos: garantiza al menos una figurita LR. Se suma a tu pila con su propio diseño.</p>
+        <div class="shop-price"><span id="shopLegendaryPriceIcon"></span><span id="shopLegendaryPrice"></span></div>
+        <div class="shop-limit" id="limit_legendary"></div>
+        <button class="btn small" id="buyLegendaryBtn">Comprar</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap" id="shopFoilIcon"></div>
+        <h4>Efecto Foil</h4>
+        <p>Aplicale un brillo animado tipo foil a la figurita que elijas (no disponible para LR, que ya tienen su propia animación).</p>
+        <div class="shop-price"><span id="shopFoilPriceIcon"></span><span id="shopFoilPrice"></span></div>
+        <div class="shop-limit" id="limit_foil"></div>
+        <button class="btn small" id="buyFoilBtn">Elegir figurita</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-big" id="shopTicketIcon">🎫</div>
+        <h4>Ticket de la suerte</h4>
+        <p>Garantiza al menos una figurita SSR o superior en el próximo sobre que abras.</p>
+        <div class="shop-price"><span id="shopTicketPriceIcon"></span><span id="shopTicketPrice"></span></div>
+        <div class="shop-limit" id="limit_ticket"></div>
+        <button class="btn small" id="buyTicketBtn">Comprar</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-tall">
+          <div class="tl-img-wrap nylon-wrap" style="width:100%;height:100%;border-radius:8px;">
+            <div class="mini-card-fill"></div>
+          </div>
+        </div>
+        <h4>Top Loader</h4>
+        <p>Guardá una figurita pegada del álbum, protegida en tu perfil. Después la podés volver a pegar cuando quieras.</p>
+        <div class="shop-price"><span id="shopToploaderPriceIcon"></span><span id="shopToploaderPrice"></span></div>
+        <div class="shop-limit" id="limit_toploader"></div>
+        <button class="btn small" id="buyToploaderBtn">Comprar</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-tall">
+          <div class="card-slab">
+            <div class="slab-label"><span class="slab-grade grade-Z">Z</span></div>
+            <div class="slab-window"><div class="mini-card-fill"></div></div>
+          </div>
+        </div>
+        <h4>Expositor</h4>
+        <p>Graduá una figurita guardada en un Top Loader: sale con calidad Z, A, B o C. Ya graduada, se puede mostrar en tu expositor o vender (nunca vuelve al álbum).</p>
+        <div class="shop-price"><span id="shopExpositorPriceIcon"></span><span id="shopExpositorPrice"></span></div>
+        <div class="shop-limit" id="limit_expositor"></div>
+        <button class="btn small" id="buyExpositorBtn">Comprar</button>
+      </div>
+      <div class="shop-item">
+        <div class="icon-wrap icon-wrap-big" id="shopMysteryIcon">🎁</div>
+        <h4>Caja Sorpresa de Baba</h4>
+        <p>Baba te da un regalo al azar: un ticket de la suerte, un Top Loader, un Expositor o un Sobre de 5.</p>
+        <div class="shop-price"><span id="shopMysteryPriceIcon"></span><span id="shopMysteryPrice"></span></div>
+        <div class="shop-limit" id="limit_mystery"></div>
+        <button class="btn small" id="buyMysteryBtn">Comprar</button>
+      </div>
+      <div class="shop-item coming-soon">
+        <div class="icon-wrap">🖼️</div>
+        <h4>Marco de álbum</h4>
+        <p>Próximamente: personalizá el fondo y el marco del álbum.</p>
+        <div class="shop-price">Próximamente</div>
+        <button class="btn small" disabled>Próximamente</button>
+      </div>
+    </div>
+    <div class="extra-sobres-line" id="ticketLine" style="text-align:center; margin-top:10px;"></div>
+    <div class="shop-note">Precios y recompensas son valores iniciales de prueba, se pueden ajustar más adelante. Los límites diarios de cada ítem existen para cuidar la economía del juego (no aplican en Modo Prueba).</div>
+  </section>
+
+  <!-- ============ VISTA PERFIL ============ -->
+  <section class="view" id="view-perfil">
+
+    <div class="perfil-section">
+      <div class="profile-header">
+        <div class="profile-avatar" id="profileAvatar" title="Tocá para cambiar tu foto">
+          <span id="profileAvatarEmoji">🙂</span>
+          <img id="profileAvatarImg" style="display:none;" alt="">
+          <div class="avatar-edit-hint">Cambiar foto</div>
+        </div>
+        <div class="profile-fields">
+          <input type="text" id="profileNick" class="profile-nick" placeholder="Tu nombre de entrenador" maxlength="24">
+          <textarea id="profileBio" class="profile-bio" rows="2" maxlength="140" placeholder="Escribí una bio corta..."></textarea>
+        </div>
+        <input type="file" id="profileAvatarFile" accept="image/*" style="display:none;">
+      </div>
+      <h3 style="margin-top:4px;">Expositor del Perfil</h3>
+      <p class="perfil-desc">Una selección exclusiva de hasta <span id="expoMaxLabel"></span> figuritas graduadas para mostrar.</p>
+      <div class="expo-showcase" id="expositorShowcase"></div>
+    </div>
+
+    <div class="perfil-section">
+      <h3>Inventario</h3>
+      <p class="perfil-desc">Top Loaders y cartas graduadas que todavía no están en el álbum ni en el expositor. Desde acá las volvés a pegar, las graduás o las vendés.</p>
+      <div class="extra-sobres-line" id="topLoaderCountLine">Top loaders vacíos: 0</div>
+      <div class="tl-grid" id="topLoaderGrid"></div>
+      <h4 class="perfil-subtitle">Cartas graduadas</h4>
+      <div class="extra-sobres-line" id="expositorCountLine">Expositores vacíos: 0</div>
+      <div class="tl-grid" id="gradedGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ VISTA LOGROS ============ -->
+  <section class="view" id="view-logros">
+    <div class="pack-panel" style="margin-bottom:6px;">
+      <div class="pack-info" style="flex:1 1 100%;">
+        <h2>Logros</h2>
+        <p>Cada uno te da una recompensa la primera vez que lo cumplís.</p>
+        <div class="progress-label" id="achProgressLabel" style="margin-top:6px;"></div>
+      </div>
+    </div>
+    <div class="ach-grid" id="achGrid"></div>
+  </section>
+
+  <!-- ============ VISTA CONTACTO ============ -->
+  <section class="view" id="view-contacto">
+    <div class="placeholder-box">
+      <h3>Contacto</h3>
+      <p>Acá vamos a poner una forma de contacto (mail, formulario o redes) para sugerencias y reportes de bugs. Todavía no la definimos.</p>
+    </div>
+  </section>
+
+  <!-- ============ VISTA NOTICIAS ============ -->
+  <section class="view" id="view-noticias">
+    <div class="placeholder-box">
+      <h3>Noticias</h3>
+      <p>Acá van a aparecer novedades del álbum: sets nuevos, eventos y cambios. Todavía no armamos el contenido.</p>
+    </div>
+  </section>
+
+  <footer>Prototipo fan-made sin fines de lucro · arte y datos de personajes vía Dokkan Battle / Dragon Ball, usados solo con fines ilustrativos.</footer>
+</div>
+
+<div class="overlay" id="revealOverlay">
+  <button class="close-x" id="revealClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="modal-title">¡Abriste tu sobre!</div>
+    <div class="modal-sub">Andá al álbum y tocá cada figurita nueva para pegarla</div>
+    <div class="pull-grid" id="pullGrid"></div>
+    <button class="btn" id="pasteBtn">Continuar</button>
+  </div>
+</div>
+
+<div class="overlay" id="detailOverlay">
+  <button class="close-x" id="detailClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="modal-card" id="detailCard">
+      <img id="detailImg" alt="">
+      <canvas id="detailAnimCanvas" class="modal-card-canvas" width="426" height="568"></canvas>
+    </div>
+    <div class="modal-title" id="detailTitle"></div>
+    <div class="modal-sub" id="detailSub"></div>
+    <div class="variant-switch" id="variantSwitch"></div>
+    <button class="btn secondary" id="detailToTopLoaderBtn" style="display:none;">Guardar en Top Loader</button>
+  </div>
+</div>
+
+<div class="overlay" id="foilPickerOverlay">
+  <button class="close-x" id="foilPickerClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="modal-title">Elegí una figurita para el efecto Foil</div>
+    <div class="modal-sub" id="foilPickerSub"></div>
+    <div class="foil-picker-grid" id="foilPickerGrid"></div>
+  </div>
+</div>
+
+<div class="overlay" id="packOpenOverlay">
+  <button class="close-x" id="packOpenClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="modal-title" id="packBigLabel"></div>
+    <div class="pack-big-row">
+      <button class="pack-arrow" id="packArrowLeft" title="Sobre anterior">‹</button>
+      <div class="pack-big" id="packBig">
+        <img class="full" id="packBigArt" src="imagenes/sobredbsaga.png" alt="Sobre Dragon Ball Saga">
+        <div class="half top" id="packBigTop"><img src="imagenes/sobredbsaga.png" alt=""></div>
+        <div class="half bottom" id="packBigBottom"><img src="imagenes/sobredbsaga.png" alt=""></div>
+      </div>
+      <button class="pack-arrow" id="packArrowRight" title="Sobre siguiente">›</button>
+    </div>
+    <div class="modal-sub" id="packBigHint">Tocá el sobre para abrirlo</div>
+    <div class="modal-sub" id="packBigTicketNote" style="color:var(--gold); display:none;">🎫 Vas a usar un ticket de la suerte en este sobre</div>
+  </div>
+</div>
+
+<div class="ach-toast" id="achToast">
+  <div class="ach-toast-icon" id="achToastIcon"></div>
+  <div class="ach-toast-text">
+    <div class="ach-toast-label">Logro desbloqueado</div>
+    <div class="ach-toast-title" id="achToastTitle"></div>
+  </div>
+</div>
+
+<div class="lr-video-overlay" id="lrVideoOverlay">
+  <video id="lrVideoEl" class="lr-video" src="videos/BulmaLRanim.mp4" playsinline></video>
+  <button class="btn secondary lr-video-skip" id="lrVideoSkip">Saltar ›</button>
+</div>
+
+<div class="overlay" id="gradeRevealOverlay">
+  <button class="close-x" id="gradeRevealClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="modal-title">¡Calidad revelada!</div>
+    <div class="modal-card" id="gradeRevealCard"><img id="gradeRevealImg" alt=""></div>
+    <div class="grade-badge-big" id="gradeRevealBadge"></div>
+    <button class="btn" id="gradeRevealOk">Continuar</button>
+  </div>
+</div>
+
+<!--
+  Animación de cartas LR con LWF (runtime de gree/lwf). Es 100% opcional y con fallback:
+  si estos scripts no cargan, o si el .lwf/las texturas de una carta no están, o si abriste
+  este HTML con doble click (file://), las LR simplemente se ven como imagen fija, igual que
+  antes. Solo se activa la animación cuando el archivo se sirve por http(s) Y existe la carpeta
+  assets/<id>/ de esa carta en particular. Ver la sección "LWF" del script principal para el
+  detalle de cómo se engancha.
+-->
+<script src="lwf.js"></script>
+<script src="card-anim.js"></script>
+
+<script>
+/* ============ DATA ============
+   Todo el juego (datos de cartas, CSS y lógica) vive en este único archivo HTML para que se
+   pueda seguir abriendo con doble click, sin depender de ningún servidor.
+
+   SAGAS es un array con un objeto por saga: cada uno trae su propia imagen promo, el arte de
+   sus propios sobres, y su lista de cartas. Para sumar una saga nueva a futuro, agregá otro
+   objeto igual a este acá mismo (no separar en otro archivo: eso es lo que rompía el doble click). */
+const SAGAS = [
+  {
+    id: 'db-saga',
+    nombre: 'Saga Niño',
+    titulo: 'Álbum Dragon Ball · Saga Niño',
+    promo: 'imagenes/promo.png',
+    packs: {
+      shop5: 'imagenes/sobredbsaga.png',
+      shop10: 'imagenes/sobredbsaga2.png',
+      shopE: 'imagenes/sobredbsagaE.png',
+      legendary: 'imagenes/sobredbsagaL.png'
+    },
+    cards:
+    [
+      {
+        "id": "0001",
+        "nombre": "Goku (Niño)",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Goku (Niño)",
+            "cardId": "1015730",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1015730/1015730.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Goku (Niño)",
+            "cardId": "1031070",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1031070/1031070.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Goku (Niño)",
+            "cardId": "1031081",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1031080/1031080.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0002",
+        "nombre": "Bulma (Niña)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Bulma (Niña)",
+            "cardId": "1019960",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1019960/1019960.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Bulma (Niña)",
+            "cardId": "1026311",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1026310/1026310.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0003",
+        "nombre": "Maestro Roshi",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Maestro Roshi",
+            "cardId": "1000430",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000430/1000430.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0004",
+        "nombre": "Ulong",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Ulong",
+            "cardId": "1003160",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1003160/1003160.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0005",
+        "nombre": "Yamcha",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Yamcha",
+            "cardId": "1002330",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002330/1002330.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Yamcha",
+            "cardId": "1015160",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1015160/1015160.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Yamcha & Puar",
+            "cardId": "1015171",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1015170/1015170.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "LR",
+            "nombre": "Yamcha & Puar",
+            "cardId": "1015181",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1015180/1015180.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0006",
+        "nombre": "Chi-Chi (Niña)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Chi-Chi (Niña)",
+            "cardId": "1031090",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1031090/1031090.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Chi-Chi (Niña)",
+            "cardId": "1031101",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1031100/1031100.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0007",
+        "nombre": "Ox Satán",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Ox Satán",
+            "cardId": "1006080",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1006080/1006080.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0008",
+        "nombre": "Maestro Roshi (Máximo Poder)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Maestro Roshi (Máximo Poder)",
+            "cardId": "1009310",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1009310/1009310.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0009",
+        "nombre": "Rey Conejo",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Rey Conejo",
+            "cardId": "1009800",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1009800/1009800.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0010",
+        "nombre": "Goku (Niño) (Gran Mono)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Goku (Niño) (Gran Mono)",
+            "cardId": "4002820",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/4002820/4002820.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0011",
+        "nombre": "Krilin (Niño)",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Krilin (Niño)",
+            "cardId": "9006910",
+            "img": "https://glbes.dokkaninfo.com/assets/global/es/character/card/1006910/1006910.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0012",
+        "nombre": "Lanch",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Lanch",
+            "cardId": "1004190",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1004190/1004190.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0013",
+        "nombre": "Yamcha",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Yamcha",
+            "cardId": "1011230",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1011230/1011230.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0014",
+        "nombre": "Bacterian",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Bacterian",
+            "cardId": "1005600",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1005600/1005600.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0015",
+        "nombre": "Lan-Fan",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Lan-Fan",
+            "cardId": "1011220",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1011220/1011220.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0016",
+        "nombre": "Giran",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Giran",
+            "cardId": "1004660",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1004660/1004660.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0017",
+        "nombre": "Nam",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Nam",
+            "cardId": "1005590",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1005590/1005590.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0018",
+        "nombre": "Jackie Chun",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Jackie Chun",
+            "cardId": "2000210",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/2000210/2000210.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0019",
+        "nombre": "Jackie Chun (Máximo Poder)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Jackie Chun (Máximo Poder)",
+            "cardId": "1020041",
+            "img": "https://glbes.dokkaninfo.com/assets/global/es/character/card/1020040/1020040.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0020",
+        "nombre": "Goku (Niño)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Goku (Niño)",
+            "cardId": "1020260",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1020260/1020260.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0021",
+        "nombre": "Soldado de la Patrulla Roja",
+        "variantes": [
+          {
+            "rareza": "N",
+            "nombre": "Soldado de la Patrulla Roja",
+            "cardId": "1000800",
+            "img": "https://glbes.dokkaninfo.com/assets/global/es/character/card/1000800/1000800.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0022",
+        "nombre": "Sargento Mayor Murasaki",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Sargento Mayor Murasaki",
+            "cardId": "1002300",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002300/1002300.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0023",
+        "nombre": "Octavio",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Octavio",
+            "cardId": "1016960",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1016960/1016960.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0024",
+        "nombre": "Robot pirata",
+        "variantes": [
+          {
+            "rareza": "N",
+            "nombre": "Robot pirata",
+            "cardId": "1000770",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000770/1000770.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0025",
+        "nombre": "General Blue",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "General Blue",
+            "cardId": "1002310",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002310/1002310.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "General Blue",
+            "cardId": "1029230",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1029230/1029230.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "General Blue",
+            "cardId": "1031341",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1031340/1031340.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0026",
+        "nombre": "Tao Pai Pai",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Tao Pai Pai",
+            "cardId": "1022320",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1022320/1022320.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Tao Pai Pai",
+            "cardId": "1031301",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1031300/1031300.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0027",
+        "nombre": "Intendente Black",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Intendente Black",
+            "cardId": "1004670",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1004670/1004670.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0028",
+        "nombre": "Dracula Man",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Dracula Man",
+            "cardId": "1002380",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002380/1002380.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0029",
+        "nombre": "Hombre Invisible",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Hombre Invisible",
+            "cardId": "1018170",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1018170/1018170.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0030",
+        "nombre": "La Momia",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "La Momia",
+            "cardId": "1002370",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002370/1002370.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0031",
+        "nombre": "Akkuman",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Akkuman",
+            "cardId": "1002360",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002360/1002360.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Akkuman",
+            "cardId": "1029320",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1029320/1029320.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Akkuman",
+            "cardId": "1029331",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1029330/1029330.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0032",
+        "nombre": "Abuelo Gohan",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Abuelo Gohan",
+            "cardId": "2000090",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/2000090/2000090.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Abuelo Gohan",
+            "cardId": "1018000",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1018000/1018000.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Abuelo Gohan",
+            "cardId": "1019921",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1019920/1019920.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0033",
+        "nombre": "Mai",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Mai",
+            "cardId": "1029190",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1029190/1029190.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Mai",
+            "cardId": "1029201",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1029200/1029200.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0034",
+        "nombre": "Pilaf",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Pilaf",
+            "cardId": "1000450",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1027560/1027560.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Pilaf",
+            "cardId": "1027571",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1027570/1027570.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "LR",
+            "nombre": "Pilaf, Shu y Mai",
+            "cardId": "1027581",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1027580/1027580.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0035",
+        "nombre": "Gola",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Gola",
+            "cardId": "1027560",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1006070/1006070.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0036",
+        "nombre": "Mera",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Mera",
+            "cardId": "1006060",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1006060/1006060.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0037",
+        "nombre": "Shula",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Shula",
+            "cardId": "1006050",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1006050/1006050.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0038",
+        "nombre": "Rey Chappa",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Rey Chappa",
+            "cardId": "1003150",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1003150/1003150.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0039",
+        "nombre": "Lobo Hombre",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Lobo Hombre",
+            "cardId": "1006140",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1006140/1006140.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0040",
+        "nombre": "Krilin (Niño)",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Krilin (Niño)",
+            "cardId": "1002340",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002340/1002340.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Krilin (Niño)",
+            "cardId": "1030300",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1030300/1030300.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Krilin (Niño)",
+            "cardId": "1030311",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1030310/1030310.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0041",
+        "nombre": "Chaos",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Chaos",
+            "cardId": "1012560",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1012560/1012560.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0042",
+        "nombre": "Pamputt",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Pamputt",
+            "cardId": "1006150",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1006150/1006150.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0043",
+        "nombre": "Maestro Tsuru",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Maestro Tsuru",
+            "cardId": "1001380",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1001380/1001380.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0044",
+        "nombre": "Tenshinhan",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Tenshinhan",
+            "cardId": "1011260",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1011260/1011260.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Tenshinhan",
+            "cardId": "1017440",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1017440/1017440.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0045",
+        "nombre": "Tambourine",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Tambourine",
+            "cardId": "1000470",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000470/1000470.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0046",
+        "nombre": "Yajirobe",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Yajirobe",
+            "cardId": "1000560",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000560/1000560.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0047",
+        "nombre": "Cimbal",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Cimbal",
+            "cardId": "1000480",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000480/1000480.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0048",
+        "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+            "cardId": "1017760",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1017760/1017760.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+            "cardId": "1017771",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1017770/1017770.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "LR",
+            "nombre": "Gran Rey Demonio Piccolo (Anciano)",
+            "cardId": "1017781",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1017780/1017780.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0049",
+        "nombre": "Maestro Roshi",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Maestro Roshi",
+            "cardId": "1016640",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1016640/1016640.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0050",
+        "nombre": "Drum",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Drum",
+            "cardId": "1000490",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000490/1000490.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0051",
+        "nombre": "Gran Rey Demonio Piccolo",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Gran Rey Demonio Piccolo",
+            "cardId": "1002270",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002270/1002270.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Gran Rey Demonio Piccolo",
+            "cardId": "1007971",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1007970/1007970.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "LR",
+            "nombre": "Gran Rey Demonio Piccolo",
+            "cardId": "4017791",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/4017790/4017790.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0052",
+        "nombre": "Goku (Niño)",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Goku (Niño)",
+            "cardId": "1016560",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1016560/1016560.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Goku (Niño)",
+            "cardId": "1016571",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1016570/1016570.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0053",
+        "nombre": "Mr Popo",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Mr Popo",
+            "cardId": "1003440",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1003440/1003440.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0054",
+        "nombre": "Kamisama",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Kamisama",
+            "cardId": "1004950",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1004950/1004950.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Kamisama",
+            "cardId": "1011101",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1011100/1011100.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0055",
+        "nombre": "Mutaito",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Mutaito",
+            "cardId": "1003450",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1003450/1003450.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0056",
+        "nombre": "Goku",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Goku",
+            "cardId": "1022260",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1022260/1022260.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Goku",
+            "cardId": "1022271",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1022270/1022270.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0057",
+        "nombre": "Tenshinhan",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Tenshinhan",
+            "cardId": "1012110",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1012110/1012110.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Tenshinhan",
+            "cardId": "1012121",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1012120/1012120.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0058",
+        "nombre": "Yajirobe",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Yajirobe",
+            "cardId": "1013140",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1013140/1013140.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0059",
+        "nombre": "Tao Pai Pai Cíborg",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Tao Pai Pai Cíborg",
+            "cardId": "2000070",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/2000070/2000070.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0060",
+        "nombre": "Chi-chi",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Chi-chi",
+            "cardId": "1013130",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1013130/1013130.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Chi-chi",
+            "cardId": "1032200",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1032200/1032200.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Chi-chi",
+            "cardId": "1032211",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1032210/1032210.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "LR",
+            "nombre": "Chi-chi",
+            "cardId": "1032221",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1032220/1032220.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0061",
+        "nombre": "Krilin",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Krilin",
+            "cardId": "1013310",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1013310/1013310.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0062",
+        "nombre": "Yamcha",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Yamcha",
+            "cardId": "1013350",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1013350/1013350.png",
+            "alternativa": false
+          }
+        ]
+      },
+      {
+        "id": "0063",
+        "nombre": "Shen",
+        "variantes": [
+          {
+            "rareza": "R",
+            "nombre": "Shen",
+            "cardId": "1000460",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1000460/1000460.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SR",
+            "nombre": "Shen",
+            "cardId": "1024680",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1024680/1024680.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Shen",
+            "cardId": "1024691",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1024690/1024690.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0064",
+        "nombre": "Goku",
+        "variantes": [
+          {
+            "rareza": "SSR",
+            "nombre": "Goku",
+            "cardId": "1026520",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1026520/1026520.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Goku",
+            "cardId": "1026531",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1026530/1026530.png",
+            "alternativa": true
+          }
+        ]
+      },
+      {
+        "id": "0065",
+        "nombre": "Ma Junior",
+        "variantes": [
+          {
+            "rareza": "SR",
+            "nombre": "Ma Junior",
+            "cardId": "1002280",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1002280/1002280.png",
+            "alternativa": false
+          },
+          {
+            "rareza": "SSR",
+            "nombre": "Ma Junior",
+            "cardId": "1026550",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1026550/1026550.png",
+            "alternativa": true
+          },
+          {
+            "rareza": "UR",
+            "nombre": "Ma Junior",
+            "cardId": "1026561",
+            "img": "https://dokkaninfo.com/assets/global/en/character/card/1026560/1026560.png",
+            "alternativa": true
+          }
+        ]
+      }
+    ]
+  }
+  /* próxima saga: sumá otro objeto como el de arriba, acá mismo */
+];
+const CURRENT_SAGA = SAGAS[0];
+const CARDS = CURRENT_SAGA.cards;
+
+
+
+const RARITY_WEIGHT = { N:60, R:50, SR:30, SSR:15, UR:6, LR:1.5 };
+const ALT_MULTIPLIER = 0.15;
+const PACK_COOLDOWN_MS = 4 * 60 * 60 * 1000; // 4 horas
+const SSR_PLUS_FLOOR_CHANCE = 0.10;
+const UR_PLUS_FLOOR_CHANCE = 0.35; // piso del sobre exclusivo
+
+const RARITY_COLORS = { N:'var(--n-color)', R:'var(--r-color)', SR:'var(--sr-color)', SSR:'var(--ssr-color)', UR:'var(--ur-color)', LR:null };
+const COIN_VALUE = { N:3, R:5, SR:12, SSR:30, UR:80, LR:200 };
+
+const SHOP_PACK_COST = 150;
+const SHOP_PACK10_COST = 260;
+const SHOP_EXCLUSIVE_COST = 750;
+const SHOP_LEGENDARY_COST = 2200;
+const SHOP_FOIL_COST = 250;
+const SHOP_TICKET_COST = 500;
+const SHOP_TOPLOADER_COST = 80;
+const SHOP_EXPOSITOR_COST = 150;
+const SHOP_MYSTERY_COST = 220;
+const CRAFT_COST = SHOP_TOPLOADER_COST + SHOP_EXPOSITOR_COST; // piso de venta de una carta graduada
+const MAX_EXPOSITOR_DISPLAY = 6;
+
+/* ---- Límites de compra diarios por ítem, pensados para cuidar la economía ----
+   (evitan que alguien vacíe el álbum de golpe comprando con monedas acumuladas).
+   Se resetean solos todos los días. En Modo Prueba no aplican: ahí todo es gratis e ilimitado. */
+const SHOP_LIMITS = {
+  shop5: 8,
+  shop10: 4,
+  shopE: 2,
+  legendary: 1,
+  foil: 5,
+  ticket: 3,
+  toploader: 10,
+  expositor: 6,
+  mystery: 3
+};
+const LS_SHOP_PURCHASES = 'dba_dragonball_shop_purchases_v1';
+function todayKey(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
+function getShopPurchases(){
+  try{
+    const raw = JSON.parse(localStorage.getItem(LS_SHOP_PURCHASES) || 'null');
+    if(raw && raw.date === todayKey()) return raw.counts || {};
+  }catch(e){}
+  return {};
+}
+function saveShopPurchases(counts){ localStorage.setItem(LS_SHOP_PURCHASES, JSON.stringify({ date: todayKey(), counts })); }
+function getPurchaseCount(key){ return getShopPurchases()[key] || 0; }
+function remainingPurchases(key){
+  const max = SHOP_LIMITS[key];
+  if(max == null) return Infinity;
+  return Math.max(0, max - getPurchaseCount(key));
+}
+function canPurchase(key){ return getTestMode() || remainingPurchases(key) > 0; }
+function registerPurchase(key){
+  if(getTestMode()) return; // modo prueba: no se gasta ni se cuenta contra el límite
+  const counts = getShopPurchases();
+  counts[key] = (counts[key] || 0) + 1;
+  saveShopPurchases(counts);
+}
+function limitReachedMsg(){ return 'Ya llegaste al límite diario de compras para este ítem. Probá de nuevo mañana.'; }
+function refreshShopLimits(){
+  for(const key in SHOP_LIMITS){
+    const el = document.getElementById('limit_' + key);
+    if(!el) continue;
+    if(getTestMode()){ el.textContent = 'Modo prueba: sin límite'; continue; }
+    const left = remainingPurchases(key);
+    el.textContent = left > 0 ? ('Quedan ' + left + '/' + SHOP_LIMITS[key] + ' hoy') : 'Límite diario alcanzado';
+  }
+}
+
+/* Probabilidad de cada calidad al graduar (pesos relativos) y multiplicador de venta por calidad */
+const GRADE_WEIGHTS = { Z:5, A:20, B:35, C:40 };
+const GRADE_MULTIPLIER = { Z:8, A:5, B:3, C:1.5 };
+/* Valor base de una figurita graduada según su rareza (más alto que el de una repetida común) */
+const EXPOSITOR_BASE_VALUE = { N:20, R:40, SR:90, SSR:220, UR:500, LR:1200 };
+
+/* Cada tipo de sobre: cuántas cartas trae, qué arte usa, y el piso de rareza garantizada */
+const PACK_TYPES = {
+  daily:  { count:5,  art:'imagenes/sobredbsaga.png',  tier:'ssr', label:'Sobre diario' },
+  shop5:  { count:5,  art:'imagenes/sobredbsaga.png',  tier:'ssr', label:'Sobre de 5' },
+  redeem: { count:5,  art:'imagenes/sobredbsaga.png',  tier:'ssr', label:'Sobre de código' },
+  shop10: { count:10, art:'imagenes/sobredbsaga2.png', tier:'ssr', label:'Sobre de 10' },
+  shopE:  { count:5,  art:'imagenes/sobredbsagaE.png', tier:'ur',  label:'Sobre exclusivo' },
+  legendary: { count:5, art:'imagenes/sobredbsagaL.png', tier:'lr', label:'Sobre Legendario' },
+};
+
+const LS_COLLECTION = 'dba_dragonball_collection_v1';
+const LS_LAST_OPEN = 'dba_dragonball_lastopen_v1';
+const LS_INVENTORY = 'dba_dragonball_inventory_v1';
+const LS_REDEEMED = 'dba_dragonball_redeemed_v1';
+const LS_TESTMODE = 'dba_dragonball_testmode_v1';
+const LS_COINS = 'dba_dragonball_coins_v1';
+const LS_LUCKY_TICKETS = 'dba_dragonball_luckytickets_v1';
+const LS_STATS = 'dba_dragonball_stats_v1';
+const LS_ACHIEVEMENTS = 'dba_dragonball_achievements_v1';
+const LS_TOPLOADERS_EMPTY = 'dba_dragonball_toploaders_empty_v1';
+const LS_EXPOSITORS_EMPTY = 'dba_dragonball_expositors_empty_v1';
+const LS_TOPLOADED_CARDS = 'dba_dragonball_toploaded_cards_v1';
+const LS_GRADED_CARDS = 'dba_dragonball_graded_cards_v1';
+const LS_PROFILE_NICK = 'dba_dragonball_profile_nick_v1';
+const LS_PROFILE_BIO = 'dba_dragonball_profile_bio_v1';
+const LS_PROFILE_AVATAR = 'dba_dragonball_profile_avatar_v1';
+
+/* Para sumar un código nuevo: agregá una línea acá con { packs: { tipo: cantidad, ... } }.
+   Tipos válidos: daily, redeem, shop10, shopE (mismos nombres que usan los logros). */
+const REDEEM_CODES = {
+  'BULMAPANTIES': { packs: { redeem: 2 } },
+  'ENTRENAMIENTOTORTUGA': { packs: { redeem: 10, shop10: 10, shopE: 10 } },
+};
+
+/* ============ LOGROS ============ */
+/* Icono opcional por logro: imagenes/logros/<id>.png (si no existe, se usa el emoji de "icon") */
+const ACHIEVEMENTS = [
+  { id:'first_pack', icon:'📦', title:'Comienza el juego.', desc:'¡Abre tu primer sobre!',
+    condition: () => getStats().packsOpened >= 1, reward: { packs:{ daily:1 } } },
+  { id:'seven_packs', icon:'🐉', title:'¡Shenlong cumple mis deseos!.', desc:'¡Abre un total de 7 Sobres!',
+    condition: () => getStats().packsOpened >= 7, reward: { packs:{ daily:3 } }, progress: () => [getStats().packsOpened, 7] },
+  { id:'lots_packs', icon:'😮‍💨', title:'Tomate un descanso.', desc:'¡Abre un total de 777 Sobres!',
+    condition: () => getStats().packsOpened >= 777, reward: { packs:{ shopE:1 } }, progress: () => [getStats().packsOpened, 777] },
+  { id:'goku_bulma', icon:'🏜️', title:'La Fantástica Aventura.', desc:'Consigue a Goku (Niño) y Bulma (Niña).',
+    condition: () => ownsAllCharacters(['Goku','Bulma']), reward: { packs:{ daily:1 } } },
+  { id:'kame_school', icon:'🐢', title:'La Escuela Tortuga.', desc:'Consigue al Maestro Roshi, Goku (Niño) y Krilin.',
+    condition: () => ownsAllCharacters(['Roshi','Goku','Krilin']), reward: { packs:{ daily:1 } } },
+  { id:'first_dupe', icon:'🔁', title:'¡Primer dupe!', desc:'Canjeá tu primer carta repetida por puntos.',
+    condition: () => getStats().dupesConverted >= 1, reward: { packs:{ daily:1 } } },
+  { id:'baba_shop', icon:'🔮', title:'Uranai Baba, La Hermosa.', desc:'Canjeá puntos en la Tienda de Baba.',
+    condition: () => getStats().shopPurchases >= 1, reward: { packs:{ daily:1 } } },
+  { id:'skull_trio', icon:'💀', title:'El Trio Calavera', desc:'Consigue a Yamcha, Tenshinhan y Chaos.',
+    condition: () => ownsAllCharacters(['Yamcha','Tenshinhan','Chaos']), reward: { packs:{ daily:1 } } },
+  { id:'first_ur', icon:'⭐', title:'¡Ultra Raro!', desc:'Consigue tu primer UR.',
+    condition: () => hasRarityOwned('UR'), reward: { packs:{ daily:1 }, coins:150 } },
+  { id:'first_lr', icon:'🌟', title:'¡Legendario!', desc:'Consigue tu primer LR.',
+    condition: () => hasRarityOwned('LR'), reward: { packs:{ shop10:1 }, coins:300 } },
+
+  /* ======================================================================
+     LOGROS - SET 2 (agregá los tuyos con este mismo formato más abajo)
+     Campos: id (único, sin espacios), icon (emoji de respaldo),
+     title, desc, condition (función sin argumentos que devuelve true/false),
+     reward ({ packs:{tipo:cantidad}, coins:N }), progress (opcional, para
+     mostrar una barra "3/7": función que devuelve [actual, objetivo]).
+     Tipos de sobre válidos en reward.packs: daily, shop10, shopE.
+     Helpers disponibles para condition: ownsAllCharacters([...]) (tenés
+     TODOS los personajes listados), ownsCountOf([...]) (cuántos de una
+     lista tenés), hasRarityOwned('UR'|'LR'|etc), getStats() (contadores:
+     packsOpened, dupesConverted, shopPurchases, ticketsUsed,
+     exclusivePacksOpened), countOwnedSlots(), CARDS.length.
+     ====================================================================== */
+  { id:'budokai', icon:'🥋', title:'Torneo de las Artes Marciales', desc:'Consigue a Jackie Chun, Maestro Tsuru y Nam.',
+    condition: () => ownsAllCharacters(['Jackie Chun','Tsuru','Nam']), reward: { packs:{ daily:1 } } },
+  { id:'sand_land', icon:'🐫', title:'Los Villanos del Desierto', desc:'Consigue a Gola, Mera y Shula.',
+    condition: () => ownsAllCharacters(['Gola','Mera','Shula']), reward: { packs:{ daily:1 } } },
+  { id:'piccolo_court', icon:'👹', title:'Piccolo Daimao y su Corte', desc:'Consigue al Gran Rey Demonio Piccolo, Tambourine y Cimbal.',
+    condition: () => ownsAllCharacters(['Rey Demonio Piccolo','Tambourine','Cimbal']), reward: { packs:{ shop10:1 }, coins:100 } },
+  { id:'devils_castle', icon:'🧛', title:'El Castillo del Diablo', desc:'Consigue a Dracula Man, La Momia y Hombre Invisible.',
+    condition: () => ownsAllCharacters(['Dracula Man','Momia','Invisible']), reward: { packs:{ daily:2 } } },
+  { id:'rich_1000', icon:'💰', title:'Uranai Baba lo aprueba', desc:'Alcanzá las 1000 monedas rojas.',
+    condition: () => getCoins() >= 1000, reward: { packs:{ daily:1 } } },
+  { id:'foil_x3', icon:'✨', title:'Con estilo', desc:'Aplicá el efecto Foil a 3 figuritas distintas.',
+    condition: () => Object.values(collection).filter(e => e.foil).length >= 3, reward: { packs:{ daily:1 }, coins:100 },
+    progress: () => [Object.values(collection).filter(e => e.foil).length, 3] },
+  { id:'full_album', icon:'🏆', title:'Dokkan Completo', desc:'Completá el álbum entero: las 63 figuritas.',
+    condition: () => countOwnedSlots() >= CARDS.length, reward: { packs:{ shopE:2 }, coins:500 },
+    progress: () => [countOwnedSlots(), CARDS.length] },
+  { id:'ticket_used', icon:'🎫', title:'Con la suerte de cara', desc:'Usá tu primer Ticket de la Suerte.',
+    condition: () => getStats().ticketsUsed >= 1, reward: { packs:{ daily:1 } } },
+  { id:'golden_pack', icon:'🟡', title:'El Sobre Dorado', desc:'Abrí tu primer Sobre Exclusivo.',
+    condition: () => getStats().exclusivePacksOpened >= 1, reward: { packs:{ daily:1 } } },
+  { id:'double_ki', icon:'🌀', title:'Doble Ki', desc:'Conseguí dos artes distintas de la misma figurita.',
+    condition: () => Object.values(collection).some(e => e.owned.length >= 2), reward: { packs:{ daily:1 } } },
+  { id:'first_toploader', icon:'🗂️', title:'Protegida para siempre', desc:'Guardá tu primera figurita en un Top Loader.',
+    condition: () => getStats().cardsToploaded >= 1, reward: { packs:{ daily:1 } } },
+  { id:'perfect_grade', icon:'🏅', title:'Calidad Perfecta', desc:'Conseguí una figurita graduada calidad Z.',
+    condition: () => getStats().zGradesObtained >= 1, reward: { packs:{ shopE:1 }, coins:200 } },
+];
+
+function getStats(){
+  const defaults = { packsOpened:0, dupesConverted:0, shopPurchases:0, ticketsUsed:0, exclusivePacksOpened:0, cardsToploaded:0, cardsGraded:0, zGradesObtained:0 };
+  try{ return Object.assign(defaults, JSON.parse(localStorage.getItem(LS_STATS) || '{}')); }
+  catch(e){ return defaults; }
+}
+function setStats(s){ localStorage.setItem(LS_STATS, JSON.stringify(s)); }
+function bumpStat(key, amount){
+  const s = getStats();
+  s[key] = (s[key] || 0) + (amount || 1);
+  setStats(s);
+}
+function getUnlockedAchievements(){ try{ return JSON.parse(localStorage.getItem(LS_ACHIEVEMENTS) || '[]'); }catch(e){ return []; } }
+function setUnlockedAchievements(arr){ localStorage.setItem(LS_ACHIEVEMENTS, JSON.stringify(arr)); }
+function hasRarityOwned(rareza){
+  return Object.values(collection).some(e => e.owned.some(o => o.rareza === rareza));
+}
+function normalizeName(s){
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+function ownsAllCharacters(fragments){
+  return fragments.every(frag => CARDS.some(c => collection[c.id] && normalizeName(c.nombre).includes(normalizeName(frag))));
+}
+function ownsCountOf(fragments){
+  return fragments.filter(frag => CARDS.some(c => collection[c.id] && normalizeName(c.nombre).includes(normalizeName(frag)))).length;
+}
+function grantAchievementReward(ach){
+  if(ach.reward.packs){ for(const k in ach.reward.packs){ addToInventory(k, ach.reward.packs[k]); } }
+  if(ach.reward.coins){ addCoins(ach.reward.coins); }
+}
+let achievementQueue = [];
+function checkAchievements(){
+  const unlocked = getUnlockedAchievements();
+  let changed = false;
+  for(const ach of ACHIEVEMENTS){
+    if(unlocked.includes(ach.id)) continue;
+    if(ach.condition()){
+      unlocked.push(ach.id);
+      changed = true;
+      grantAchievementReward(ach);
+      achievementQueue.push(ach);
+    }
+  }
+  if(changed){
+    setUnlockedAchievements(unlocked);
+    renderPackStack(); refreshPackUI();
+    if(document.getElementById('view-logros').classList.contains('active')) renderAchievements();
+    processAchievementQueue();
+  }
+}
+function processAchievementQueue(){
+  if(achievementQueue.length === 0) return;
+  const toast = document.getElementById('achToast');
+  if(toast.classList.contains('show')) return; // ya mostrando una, espera a que termine
+  const ach = achievementQueue.shift();
+  const iconEl = document.getElementById('achToastIcon');
+  iconEl.innerHTML = '';
+  const img = document.createElement('img');
+  img.src = 'imagenes/logros/' + ach.id + '.png';
+  img.onerror = function(){ iconEl.textContent = ach.icon; };
+  img.onload = function(){ iconEl.innerHTML=''; iconEl.appendChild(img); };
+  iconEl.textContent = ach.icon;
+  document.getElementById('achToastTitle').textContent = ach.title;
+  playAchievementSound();
+  toast.classList.add('show');
+  setTimeout(()=>{
+    toast.classList.remove('show');
+    setTimeout(processAchievementQueue, 400);
+  }, 4200);
+}
+function renderAchievements(){
+  const unlocked = getUnlockedAchievements();
+  const grid = document.getElementById('achGrid');
+  grid.innerHTML = '';
+  for(const ach of ACHIEVEMENTS){
+    const isUnlocked = unlocked.includes(ach.id);
+    const card = document.createElement('div');
+    card.className = 'ach-card' + (isUnlocked ? ' unlocked' : '');
+    const icon = document.createElement('div');
+    icon.className = 'ach-icon';
+    icon.textContent = ach.icon;
+    const img = document.createElement('img');
+    img.src = 'imagenes/logros/' + ach.id + '.png';
+    img.onerror = function(){ this.remove(); };
+    img.onload = function(){ icon.textContent=''; };
+    icon.appendChild(img);
+    card.appendChild(icon);
+    const text = document.createElement('div');
+    text.className = 'ach-text';
+    text.innerHTML = '<h4>' + ach.title + '</h4><p>' + ach.desc + '</p>';
+    if(isUnlocked){
+      const rewardBits = [];
+      if(ach.reward.packs){ for(const k in ach.reward.packs){ rewardBits.push((PACK_TYPES[k]||{}).label + ' x' + ach.reward.packs[k]); } }
+      if(ach.reward.coins){ rewardBits.push(ach.reward.coins + ' monedas rojas'); }
+      const r = document.createElement('div'); r.className='ach-reward'; r.textContent = 'Recompensa: ' + rewardBits.join(' + ');
+      text.appendChild(r);
+    } else if(ach.progress){
+      const [cur, total] = ach.progress();
+      const p = document.createElement('div'); p.className='ach-progress'; p.textContent = Math.min(cur,total) + ' / ' + total;
+      text.appendChild(p);
+    }
+    card.appendChild(text);
+    grid.appendChild(card);
+  }
+  const unlockedCount = unlocked.length;
+  document.getElementById('achProgressLabel').textContent = unlockedCount + ' / ' + ACHIEVEMENTS.length + ' logros conseguidos';
+}
+
+/* Arte de cartas alojado en nuestro propio servidor, en vez de traerlo directo de dokkaninfo.com:
+   evita el bloqueo por Referer al servir por http/localhost, y no dependemos de que su servidor
+   siga respondiendo. Cada carta usa el mismo nombre de archivo que ya tenía en la URL original
+   (ej ".../1015180/1015180.png" -> "assets/cards/1015180.png"), solo cambia el prefijo.
+   Para poblar assets/cards/ una sola vez, correr download_card_art.py (ver junto a este archivo). */
+function cardImgSrc(url){
+  if(!url) return url;
+  const m = url.match(/\/([^\/?#]+\.png)(?:[?#].*)?$/i);
+  return m ? 'assets/cards/' + m[1] : url;
+}
+function tlHelperImg(cardId, rareza, alternativa){
+  const card = CARDS.find(c => c.id === cardId);
+  const v = card ? findVariant(card, rareza, alternativa) : null;
+  return v ? cardImgSrc(v.img) : '';
+}
+function buildSlabEl(g){
+  const slab = document.createElement('div'); slab.className = 'card-slab';
+  const label = document.createElement('div'); label.className = 'slab-label';
+  label.innerHTML = 'GRADO <span class="slab-grade grade-' + g.grade + '">' + g.grade + '</span>';
+  slab.appendChild(label);
+  const win = document.createElement('div'); win.className = 'slab-window';
+  if(g.foil) win.classList.add('foil-effect');
+  const img = document.createElement('img');
+  img.src = tlHelperImg(g.cardId, g.rareza, g.alternativa);
+  img.onerror = () => { img.style.display='none'; win.style.background = rarityFallbackBg(g.rareza); };
+  win.appendChild(img);
+  slab.appendChild(win);
+  return slab;
+}
+function renderToploaders(){
+  document.getElementById('topLoaderCountLine').textContent = 'Top loaders vacíos: ' + getEmptyToploaders();
+  const list = getToploadedCards();
+  const grid = document.getElementById('topLoaderGrid');
+  grid.innerHTML = '';
+  if(list.length === 0){
+    const note = document.createElement('div'); note.className='tl-empty-note';
+    note.textContent = 'Todavía no guardaste ninguna figurita en un Top Loader.';
+    grid.appendChild(note);
+  }
+  for(const tl of list){
+    const card = document.createElement('div'); card.className = 'tl-card';
+    const wrap = document.createElement('div'); wrap.className = 'tl-img-wrap nylon-wrap';
+    if(tl.foil) wrap.classList.add('foil-effect');
+    const img = document.createElement('img');
+    img.src = tlHelperImg(tl.cardId, tl.rareza, tl.alternativa);
+    img.onerror = () => { img.style.display='none'; wrap.style.background = rarityFallbackBg(tl.rareza); };
+    wrap.appendChild(img);
+    const badge = document.createElement('div');
+    badge.innerHTML = rarityBadgeSVG(tl.rareza);
+    badge.className = 'tl-rarity'; badge.style.position='absolute'; badge.style.bottom='3px'; badge.style.left='3px';
+    wrap.appendChild(badge);
+    card.appendChild(wrap);
+    const label = document.createElement('div'); label.style.fontSize='11px'; label.style.color='#c9bfe0';
+    label.textContent = '#' + tl.cardId;
+    card.appendChild(label);
+    const actions = document.createElement('div'); actions.className = 'tl-actions';
+    const pasteBtn = document.createElement('button'); pasteBtn.className='btn small'; pasteBtn.textContent='Pegar en álbum';
+    pasteBtn.addEventListener('click', () => pasteBackFromToploader(tl.uid));
+    actions.appendChild(pasteBtn);
+    const gradeBtn = document.createElement('button'); gradeBtn.className='btn small secondary'; gradeBtn.textContent='Graduar';
+    if(getEmptyExpositors() <= 0) gradeBtn.disabled = true;
+    gradeBtn.addEventListener('click', () => gradeToploadedCard(tl.uid));
+    actions.appendChild(gradeBtn);
+    card.appendChild(actions);
+    grid.appendChild(card);
+  }
+}
+function renderGraded(){
+  document.getElementById('expoMaxLabel').textContent = MAX_EXPOSITOR_DISPLAY;
+  document.getElementById('expositorCountLine').textContent = 'Expositores vacíos: ' + getEmptyExpositors();
+  const list = getGradedCards();
+  const showcase = document.getElementById('expositorShowcase');
+  showcase.innerHTML = '';
+  const displayed = list.filter(g => g.displayed);
+  for(let i = 0; i < MAX_EXPOSITOR_DISPLAY; i++){
+    const g = displayed[i];
+    const slot = document.createElement('div'); slot.className = 'expo-slot' + (g ? ' filled' : '');
+    if(g){
+      slot.appendChild(buildSlabEl(g));
+    } else {
+      const num = document.createElement('div'); num.className='num'; num.textContent = i+1;
+      slot.appendChild(num);
+    }
+    showcase.appendChild(slot);
+  }
+  const grid = document.getElementById('gradedGrid');
+  grid.innerHTML = '';
+  if(list.length === 0){
+    const note = document.createElement('div'); note.className='tl-empty-note';
+    note.textContent = 'Todavía no graduaste ninguna figurita.';
+    grid.appendChild(note);
+  }
+  for(const g of list){
+    const card = document.createElement('div'); card.className = 'tl-card';
+    const wrap = document.createElement('div'); wrap.className = 'tl-img-wrap'; wrap.style.padding='0';
+    wrap.appendChild(buildSlabEl(g));
+    card.appendChild(wrap);
+    const label = document.createElement('div'); label.style.fontSize='11px'; label.style.color='#c9bfe0';
+    label.textContent = '#' + g.cardId + ' · vale ' + gradedSellValue(g.rareza, g.grade);
+    card.appendChild(label);
+    const actions = document.createElement('div'); actions.className = 'tl-actions';
+    const dispBtn = document.createElement('button'); dispBtn.className='btn small' + (g.displayed ? '' : ' secondary'); dispBtn.textContent = g.displayed ? 'Quitar del expositor' : 'Mostrar';
+    dispBtn.addEventListener('click', () => toggleExpositorDisplay(g.uid));
+    actions.appendChild(dispBtn);
+    const sellBtn = document.createElement('button'); sellBtn.className='btn small secondary'; sellBtn.textContent='Vender';
+    sellBtn.addEventListener('click', () => sellGradedCard(g.uid));
+    actions.appendChild(sellBtn);
+    card.appendChild(actions);
+    grid.appendChild(card);
+  }
+}
+function showGradeReveal(graded){
+  const img = document.getElementById('gradeRevealImg');
+  img.src = tlHelperImg(graded.cardId, graded.rareza, graded.alternativa);
+  img.style.display = '';
+  img.onerror = () => { img.style.display='none'; document.getElementById('gradeRevealCard').style.background = rarityFallbackBg(graded.rareza); };
+  document.getElementById('gradeRevealBadge').className = 'grade-badge-big grade-' + graded.grade;
+  document.getElementById('gradeRevealBadge').textContent = graded.grade;
+  document.getElementById('gradeRevealOverlay').classList.add('show');
+}
+
+/* ============ PERFIL: nick / bio / foto editables ============ */
+function loadProfileHeader(){
+  const nick = localStorage.getItem(LS_PROFILE_NICK) || '';
+  const bio = localStorage.getItem(LS_PROFILE_BIO) || '';
+  const avatar = localStorage.getItem(LS_PROFILE_AVATAR) || '';
+  document.getElementById('profileNick').value = nick;
+  document.getElementById('profileBio').value = bio;
+  const img = document.getElementById('profileAvatarImg');
+  const emoji = document.getElementById('profileAvatarEmoji');
+  if(avatar){ img.src = avatar; img.style.display=''; emoji.style.display='none'; }
+  else { img.style.display='none'; emoji.style.display=''; }
+}
+document.getElementById('profileNick').addEventListener('input', (e) => {
+  localStorage.setItem(LS_PROFILE_NICK, e.target.value);
+});
+document.getElementById('profileBio').addEventListener('input', (e) => {
+  localStorage.setItem(LS_PROFILE_BIO, e.target.value);
+});
+document.getElementById('profileAvatar').addEventListener('click', () => {
+  document.getElementById('profileAvatarFile').click();
+});
+document.getElementById('profileAvatarFile').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    localStorage.setItem(LS_PROFILE_AVATAR, reader.result);
+    loadProfileHeader();
+  };
+  reader.readAsDataURL(file);
+});
+document.getElementById('gradeRevealOk').addEventListener('click', () => document.getElementById('gradeRevealOverlay').classList.remove('show'));
+document.getElementById('gradeRevealClose').addEventListener('click', () => document.getElementById('gradeRevealOverlay').classList.remove('show'));
+
+/* ============ ICONOS ============ */
+function coinIconSVG(){
+  return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="coinGrad" cx="35%" cy="30%" r="75%">
+      <stop offset="0%" stop-color="#ff9d6b"/><stop offset="55%" stop-color="#e2402f"/><stop offset="100%" stop-color="#a4201a"/>
+    </radialGradient></defs>
+    <circle cx="50" cy="50" r="45" fill="url(#coinGrad)" stroke="#7a1510" stroke-width="4"/>
+    <circle cx="50" cy="50" r="33" fill="none" stroke="#ffd7b0" stroke-width="2.5" opacity="0.7"/>
+    <path d="M50 26 L57 44 L76 44 L60 56 L66 74 L50 63 L34 74 L40 56 L24 44 L43 44 Z" fill="#ffe7d1"/>
+  </svg>`;
+}
+/* Nota: ícono placeholder de moneda roja (no llegó el PNG adjunto). Reemplazar fácil: buscar
+   la línea de arriba y cambiarla por <img src="data:image/png;base64,...">  */
+let badgeIdCounter = 0;
+function rarityBadgeSVG(rareza){
+  badgeIdCounter++;
+  if(rareza === 'LR'){
+    const gid = 'lrg' + badgeIdCounter;
+    return `<svg class="rarity-badge" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#ff6a1a"/><stop offset="35%" stop-color="#ff3d7f"/>
+        <stop offset="70%" stop-color="#8659c9"/><stop offset="100%" stop-color="#e3b23c"/>
+      </linearGradient></defs>
+      <polygon points="50,3 97,50 50,97 3,50" fill="url(#${gid})" stroke="#fff" stroke-width="4"/>
+      <text x="50" y="63" font-family="Nunito, sans-serif" font-weight="800" font-size="34" fill="#fff" text-anchor="middle">LR</text>
+    </svg>`;
+  }
+  const color = RARITY_COLORS[rareza] || '#999';
+  return `<svg class="rarity-badge" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <polygon points="50,3 97,50 50,97 3,50" fill="${color}" stroke="#fff" stroke-width="4"/>
+    <text x="50" y="63" font-family="Nunito, sans-serif" font-weight="800" font-size="${rareza.length>2?26:34}" fill="#fff" text-anchor="middle">${rareza}</text>
+  </svg>`;
+}
+
+/* ============ STATE ============ */
+function loadCollection(){ try{ const raw = localStorage.getItem(LS_COLLECTION); return raw ? JSON.parse(raw) : {}; }catch(e){ return {}; } }
+function saveCollection(col){ localStorage.setItem(LS_COLLECTION, JSON.stringify(col)); }
+function getLastOpen(){ const v = localStorage.getItem(LS_LAST_OPEN); return v ? parseInt(v,10) : 0; }
+function setLastOpen(ts){ localStorage.setItem(LS_LAST_OPEN, String(ts)); }
+function getInventory(){ try{ return JSON.parse(localStorage.getItem(LS_INVENTORY) || '[]'); }catch(e){ return []; } }
+function setInventory(arr){ localStorage.setItem(LS_INVENTORY, JSON.stringify(arr)); }
+function addToInventory(kind, qty){
+  qty = qty || 1;
+  const inv = getInventory();
+  for(let i=0;i<qty;i++) inv.push(kind);
+  setInventory(inv);
+}
+function getRedeemed(){ try{ return JSON.parse(localStorage.getItem(LS_REDEEMED) || '[]'); }catch(e){ return []; } }
+function setRedeemed(list){ localStorage.setItem(LS_REDEEMED, JSON.stringify(list)); }
+function getTestMode(){ return localStorage.getItem(LS_TESTMODE) === '1'; }
+function setTestMode(v){ localStorage.setItem(LS_TESTMODE, v ? '1' : '0'); }
+function getCoins(){ return parseInt(localStorage.getItem(LS_COINS) || '0', 10); }
+function setCoins(n){ localStorage.setItem(LS_COINS, String(Math.max(0,n))); updateCoinUI(); }
+function addCoins(n){ setCoins(getCoins() + n); }
+function getLuckyTickets(){ return parseInt(localStorage.getItem(LS_LUCKY_TICKETS) || '0', 10); }
+function setLuckyTickets(n){ localStorage.setItem(LS_LUCKY_TICKETS, String(Math.max(0,n))); }
+
+/* ============ TOP LOADERS / EXPOSITOR ============ */
+function getEmptyToploaders(){ return parseInt(localStorage.getItem(LS_TOPLOADERS_EMPTY) || '0', 10); }
+function setEmptyToploaders(n){ localStorage.setItem(LS_TOPLOADERS_EMPTY, String(Math.max(0,n))); }
+function getEmptyExpositors(){ return parseInt(localStorage.getItem(LS_EXPOSITORS_EMPTY) || '0', 10); }
+function setEmptyExpositors(n){ localStorage.setItem(LS_EXPOSITORS_EMPTY, String(Math.max(0,n))); }
+function getToploadedCards(){ try{ return JSON.parse(localStorage.getItem(LS_TOPLOADED_CARDS) || '[]'); }catch(e){ return []; } }
+function setToploadedCards(arr){ localStorage.setItem(LS_TOPLOADED_CARDS, JSON.stringify(arr)); }
+function getGradedCards(){ try{ return JSON.parse(localStorage.getItem(LS_GRADED_CARDS) || '[]'); }catch(e){ return []; } }
+function setGradedCards(arr){ localStorage.setItem(LS_GRADED_CARDS, JSON.stringify(arr)); }
+function genUid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function weightedGrade(){
+  const entries = Object.entries(GRADE_WEIGHTS);
+  const total = entries.reduce((s,[,w])=>s+w,0);
+  let r = Math.random() * total;
+  for(const [g,w] of entries){ r -= w; if(r <= 0) return g; }
+  return entries[entries.length-1][0];
+}
+function gradedSellValue(rareza, grade){
+  const base = EXPOSITOR_BASE_VALUE[rareza] || 20;
+  return Math.max(CRAFT_COST, Math.round(base * GRADE_MULTIPLIER[grade]));
+}
+
+/* Sacar del álbum una figurita ya pegada y guardarla en un Top Loader vacío */
+function moveToTopLoader(cardId){
+  const entry = collection[cardId];
+  if(!entry || !entry.pasted) return false;
+  if(getEmptyToploaders() <= 0) return false;
+  const sel = entry.selected;
+  const tl = { uid: genUid(), cardId, rareza: sel.rareza, alternativa: sel.alternativa, foil: !!entry.foil };
+  entry.owned = entry.owned.filter(o => !(o.rareza === sel.rareza && o.alternativa === sel.alternativa));
+  entry.foil = false;
+  if(entry.owned.length === 0){
+    delete collection[cardId];
+  } else {
+    entry.selected = entry.owned[0];
+    entry.pasted = false;
+  }
+  saveCollection(collection);
+  setEmptyToploaders(getEmptyToploaders() - 1);
+  const list = getToploadedCards(); list.push(tl); setToploadedCards(list);
+  bumpStat('cardsToploaded', 1);
+  renderGrid();
+  checkAchievements();
+  return true;
+}
+/* Sacar una figurita de su Top Loader y volver a pegarla (queda pendiente de pegado) en el álbum */
+function pasteBackFromToploader(uid){
+  const list = getToploadedCards();
+  const idx = list.findIndex(x => x.uid === uid);
+  if(idx < 0) return;
+  const tl = list[idx];
+  list.splice(idx, 1); setToploadedCards(list);
+  setEmptyToploaders(getEmptyToploaders() + 1);
+  let entry = collection[tl.cardId];
+  if(!entry){ entry = { owned: [], selected: null, foil:false, pasted:false }; collection[tl.cardId] = entry; }
+  const already = entry.owned.some(o => o.rareza === tl.rareza && o.alternativa === tl.alternativa);
+  if(!already) entry.owned.push({ rareza: tl.rareza, alternativa: tl.alternativa });
+  entry.selected = { rareza: tl.rareza, alternativa: tl.alternativa };
+  if(tl.foil) entry.foil = true;
+  entry.pasted = false;
+  saveCollection(collection);
+  renderGrid();
+  renderToploaders();
+}
+/* Graduar una figurita del Top Loader: sale con una calidad al azar y pasa a ser una carta permanente del expositor */
+function gradeToploadedCard(uid){
+  if(getEmptyExpositors() <= 0) return;
+  const list = getToploadedCards();
+  const idx = list.findIndex(x => x.uid === uid);
+  if(idx < 0) return;
+  const tl = list[idx];
+  list.splice(idx, 1); setToploadedCards(list);
+  setEmptyExpositors(getEmptyExpositors() - 1);
+  const grade = weightedGrade();
+  const graded = { uid: tl.uid, cardId: tl.cardId, rareza: tl.rareza, alternativa: tl.alternativa, foil: tl.foil, grade, displayed:false };
+  const glist = getGradedCards(); glist.push(graded); setGradedCards(glist);
+  bumpStat('cardsGraded', 1);
+  if(grade === 'Z') bumpStat('zGradesObtained', 1);
+  renderToploaders();
+  renderGraded();
+  checkAchievements();
+  showGradeReveal(graded);
+}
+function toggleExpositorDisplay(uid){
+  const list = getGradedCards();
+  const g = list.find(x => x.uid === uid);
+  if(!g) return;
+  if(!g.displayed){
+    const shown = list.filter(x => x.displayed).length;
+    if(shown >= MAX_EXPOSITOR_DISPLAY){ alert('Tu expositor ya tiene el máximo de ' + MAX_EXPOSITOR_DISPLAY + ' figuritas mostradas. Sacá una para agregar otra.'); return; }
+  }
+  g.displayed = !g.displayed;
+  setGradedCards(list);
+  renderGraded();
+}
+function sellGradedCard(uid){
+  const list = getGradedCards();
+  const idx = list.findIndex(x => x.uid === uid);
+  if(idx < 0) return;
+  const g = list[idx];
+  const value = gradedSellValue(g.rareza, g.grade);
+  if(!confirm('¿Vender esta figurita calidad ' + g.grade + ' por ' + value + ' monedas rojas? No se puede deshacer.')) return;
+  list.splice(idx, 1); setGradedCards(list);
+  addCoins(value);
+  renderGraded();
+}
+
+let collection = loadCollection();
+
+/* ============ PULL LOGIC ============ */
+function buildPool(filterFn){
+  const pool = [];
+  for(const card of CARDS){
+    for(const v of card.variantes){
+      if(filterFn && !filterFn(v)) continue;
+      const w = RARITY_WEIGHT[v.rareza] * (v.alternativa ? ALT_MULTIPLIER : 1);
+      pool.push({ card, variant: v, weight: w });
+    }
+  }
+  return pool;
+}
+/* Para los "pisos" garantizados (sobre SSR+/UR+) NO aplicamos el multiplicador de
+   alternativa: si no, una LR "normal" termina pesando más que una UR que resulta
+   ser arte alternativo, y el sobre garantizado te tira demasiadas LR. Acá el peso
+   es puramente por rareza, para que UR siga siendo más común que LR dentro del piso. */
+function buildTierPool(filterFn){
+  const pool = [];
+  for(const card of CARDS){
+    for(const v of card.variantes){
+      if(filterFn && !filterFn(v)) continue;
+      pool.push({ card, variant: v, weight: RARITY_WEIGHT[v.rareza] });
+    }
+  }
+  return pool;
+}
+const POOL_ALL = buildPool();
+const POOL_SSR_PLUS = buildTierPool(v => ['SSR','UR','LR'].includes(v.rareza));
+const POOL_UR_PLUS = buildTierPool(v => ['UR','LR'].includes(v.rareza));
+const POOL_LR_ONLY = buildTierPool(v => v.rareza === 'LR');
+
+function weightedPick(pool){
+  const total = pool.reduce((s,p)=>s+p.weight,0);
+  let r = Math.random() * total;
+  for(const entry of pool){ r -= entry.weight; if(r <= 0) return entry; }
+  return pool[pool.length-1];
+}
+function pullPack(count, tier){
+  tier = tier || 'ssr';
+  const pulls = [];
+  for(let i=0;i<count;i++){ pulls.push(weightedPick(POOL_ALL)); }
+  const hasSSRPlus = pulls.some(p => ['SSR','UR','LR'].includes(p.variant.rareza));
+  const tickets = getLuckyTickets();
+  if(!hasSSRPlus && (Math.random() < SSR_PLUS_FLOOR_CHANCE || tickets > 0)){
+    pulls[pulls.length - 1] = weightedPick(POOL_SSR_PLUS);
+  }
+  if(tickets > 0){ setLuckyTickets(tickets - 1); bumpStat('ticketsUsed', 1); }
+  if(tier === 'ur'){
+    const hasURPlus = pulls.some(p => ['UR','LR'].includes(p.variant.rareza));
+    if(!hasURPlus && Math.random() < UR_PLUS_FLOOR_CHANCE){
+      pulls[pulls.length - 1] = weightedPick(POOL_UR_PLUS);
+    }
+  } else if(tier === 'lr'){
+    /* Sobre Legendario: garantiza SIEMPRE al menos una LR, por eso es caro y con límite diario de 1 */
+    const hasLR = pulls.some(p => p.variant.rareza === 'LR');
+    if(!hasLR){
+      pulls[pulls.length - 1] = weightedPick(POOL_LR_ONLY);
+    }
+  }
+  return pulls;
+}
+
+/* ============ COLLECTION HELPERS ============ */
+function ownsVariant(slotId, rareza, alternativa){
+  const e = collection[slotId];
+  if(!e) return false;
+  return e.owned.some(o => o.rareza===rareza && o.alternativa===alternativa);
+}
+function addNewVariant(card, variant){
+  let entry = collection[card.id];
+  if(!entry){ entry = { owned: [], selected: null, foil:false, pasted:false }; collection[card.id] = entry; }
+  entry.owned.push({ rareza: variant.rareza, alternativa: variant.alternativa });
+  entry.selected = { rareza: variant.rareza, alternativa: variant.alternativa };
+  entry.pasted = false; /* toda figurita nueva, sea la primera o una variante extra de una casilla ya ocupada, hay que pegarla a mano */
+  saveCollection(collection);
+}
+function findVariant(card, rareza, alternativa){
+  return card.variantes.find(v=>v.rareza===rareza && v.alternativa===alternativa);
+}
+function countOwnedSlots(){ return Object.keys(collection).length; }
+/* Cartas que tienen al menos una variante de arte alternativo disponible */
+const ALT_CARDS = CARDS.filter(c => c.variantes.some(v => v.alternativa));
+function countOwnedAltSlots(){
+  return ALT_CARDS.filter(c => {
+    const entry = collection[c.id];
+    return entry && entry.owned.some(o => o.alternativa);
+  }).length;
+}
+function rarityFallbackBg(rareza){
+  const map = { N:'#8a8f98', R:'#3f9142', SR:'#2f7fd1', SSR:'#e0529a', UR:'#e3b23c', LR:'linear-gradient(135deg,#ff6a1a,#8659c9)' };
+  return map[rareza] || '#999';
+}
+
+/* ============ RENDER: ALBUM ============ */
+const gridEl = document.getElementById('grid');
+function renderGrid(justLandedIds){
+  justLandedIds = justLandedIds || [];
+  gridEl.innerHTML = '';
+  for(const card of CARDS){
+    const entry = collection[card.id];
+    const slot = document.createElement('div');
+    slot.className = 'slot' + (entry ? ' filled' : '');
+    if(entry && entry.pasted === false){
+      slot.classList.add('pending');
+      const v = findVariant(card, entry.selected.rareza, entry.selected.alternativa);
+      const img = document.createElement('img');
+      img.src = cardImgSrc(v.img); img.loading = 'lazy'; img.style.opacity = '0.4';
+      img.onerror = () => { img.style.display='none'; slot.style.background = rarityFallbackBg(v.rareza); };
+      slot.appendChild(img);
+      const label = document.createElement('div');
+      label.className = 'pending-label';
+      label.textContent = 'Tocá para pegar';
+      slot.appendChild(label);
+      slot.addEventListener('click', ()=> pasteSticker(card));
+    } else if(entry){
+      const sel = entry.selected;
+      const v = findVariant(card, sel.rareza, sel.alternativa);
+      if(v.rareza === 'LR') slot.classList.add('is-lr-slot');
+      if(entry.foil && v.rareza !== 'LR') slot.classList.add('foil-effect');
+      const img = document.createElement('img');
+      img.src = cardImgSrc(v.img); img.loading = 'lazy';
+      img.onerror = () => { img.style.display='none'; slot.style.background = rarityFallbackBg(v.rareza); };
+      slot.appendChild(img);
+      const badge = document.createElement('div');
+      badge.innerHTML = rarityBadgeSVG(v.rareza);
+      badge.style.position='absolute'; badge.style.bottom='4px'; badge.style.left='4px'; badge.style.width='32px'; badge.style.height='32px';
+      slot.appendChild(badge);
+      if(v.alternativa){ const alt = document.createElement('div'); alt.className='alt-tag'; alt.textContent='ALT'; slot.appendChild(alt); }
+      slot.addEventListener('click', ()=> openDetail(card));
+      if(justLandedIds.includes(card.id)) slot.classList.add('new-land');
+    } else {
+      const num = document.createElement('div'); num.className='num'; num.textContent='#'+card.id;
+      slot.appendChild(num);
+    }
+    gridEl.appendChild(slot);
+  }
+  updateProgress();
+}
+function pasteSticker(card){
+  const entry = collection[card.id];
+  if(!entry || entry.pasted !== false) return;
+  playPasteSound();
+  entry.pasted = true;
+  saveCollection(collection);
+  renderGrid([card.id]);
+}
+function updateProgress(){
+  const owned = countOwnedSlots();
+  document.getElementById('progressLabel').textContent = owned + ' / ' + CARDS.length + ' conseguidas';
+  document.getElementById('progressFill').style.width = Math.round(owned/CARDS.length*100) + '%';
+  const ownedAlt = countOwnedAltSlots();
+  document.getElementById('progressAltLabel').textContent = ownedAlt + ' / ' + ALT_CARDS.length + ' alternativas conseguidas';
+  document.getElementById('progressAltFill').style.width = (ALT_CARDS.length ? Math.round(ownedAlt/ALT_CARDS.length*100) : 0) + '%';
+}
+function updateCoinUI(){
+  document.getElementById('coinAmount').textContent = getCoins();
+}
+
+/* ============ PACK COOLDOWN / INVENTARIO DE SOBRES ============ */
+const packVisual = document.getElementById('packVisual');
+const packText = document.getElementById('packText');
+const packAction = document.getElementById('packAction');
+const packStack = document.getElementById('packStack');
+const packStackBadge = document.getElementById('packStackBadge');
+
+function grantDailyPacksIfNeeded(){
+  if(getTestMode()) return;
+  const now = Date.now();
+  let last = getLastOpen();
+  if(last === 0){
+    addToInventory('daily');
+    setLastOpen(now);
+    return;
+  }
+  let grants = Math.floor((now - last) / PACK_COOLDOWN_MS);
+  if(grants > 0){
+    grants = Math.min(grants, 30); // tope de seguridad, no de diseño
+    addToInventory('daily', grants);
+    setLastOpen(last + grants * PACK_COOLDOWN_MS);
+  }
+}
+function msUntilNextPack(){
+  if(getTestMode()) return 0;
+  const last = getLastOpen() || Date.now();
+  return Math.max(0, (last + PACK_COOLDOWN_MS) - Date.now());
+}
+function formatMs(ms){
+  const total = Math.floor(ms/1000);
+  const h = String(Math.floor(total/3600)).padStart(2,'0');
+  const m = String(Math.floor((total%3600)/60)).padStart(2,'0');
+  const s = String(total%60).padStart(2,'0');
+  return h+':'+m+':'+s;
+}
+function renderPackStack(){
+  const inv = getInventory();
+  packStack.innerHTML = '';
+  if(inv.length === 0){
+    const img = document.createElement('img');
+    img.className = 'stack-item stack-empty-hint';
+    img.src = PACK_TYPES.daily.art;
+    img.onerror = function(){ console.warn('[imagen de sobre no se pudo cargar]', this.src); this.style.display='none'; };
+    packStack.appendChild(img);
+    packStackBadge.style.display = 'none';
+    return;
+  }
+  const shown = inv.slice(0, 4);
+  shown.forEach((kind, idx) => {
+    const img = document.createElement('img');
+    img.className = 'stack-item';
+    img.src = (PACK_TYPES[kind] || PACK_TYPES.daily).art;
+    img.style.transform = 'translate(' + (idx*6) + 'px,' + (-idx*6) + 'px) rotate(' + (idx*3) + 'deg)';
+    img.style.zIndex = idx;
+    img.onerror = function(){ console.warn('[imagen de sobre no se pudo cargar]', this.src); this.style.display='none'; };
+    packStack.appendChild(img);
+  });
+  packStackBadge.style.display='flex'; packStackBadge.textContent = 'x' + inv.length;
+}
+function refreshPackUI(){
+  grantDailyPacksIfNeeded();
+  const inv = getInventory();
+  const remaining = msUntilNextPack();
+  renderPackStack();
+  const ticketBadge = document.getElementById('ticketBadge');
+  const ticketsNow = getLuckyTickets();
+  ticketBadge.style.display = ticketsNow > 0 ? 'inline-block' : 'none';
+  ticketBadge.textContent = '🎫 Ticket de la suerte activo' + (ticketsNow > 1 ? ' (x' + ticketsNow + ')' : '');
+  const line = document.getElementById('extraSobresLine');
+  if(line) line.textContent = 'Sobres en tu pila: ' + inv.length;
+  if(getTestMode()){
+    packVisual.classList.remove('disabled');
+    packText.textContent = 'Modo prueba activo: sobres ilimitados sin esperar el cooldown.';
+    packAction.innerHTML = '<button class="btn" id="openPackBtn">Abrir sobre</button>';
+    document.getElementById('openPackBtn').addEventListener('click', () => openPackPreview('daily', false));
+  } else if(inv.length > 0){
+    packVisual.classList.remove('disabled');
+    packText.textContent = inv.length === 1
+      ? 'Tenés 1 sobre esperando. Tocá la pila para abrirlo.'
+      : 'Tenés ' + inv.length + ' sobres esperando. Tocá la pila para abrir uno.';
+    packAction.innerHTML = '<div class="timer" style="font-size:14px;">Próximo sobre gratis en ' + formatMs(remaining) + '</div>';
+  } else {
+    packVisual.classList.add('disabled');
+    packText.textContent = 'Todavía no tenés sobres. El próximo diario llega en:';
+    packAction.innerHTML = '<div class="timer">' + formatMs(remaining) + '</div>';
+  }
+}
+setInterval(refreshPackUI, 1000);
+packVisual.addEventListener('click', () => {
+  if(getTestMode()){ openPackPreview('daily', false); return; }
+  const inv = getInventory();
+  if(inv.length > 0) openPackPreview(inv[0], true);
+});
+
+document.querySelectorAll('.pack-art, .pack-big img').forEach(el => {
+  el.addEventListener('error', function(){
+    this.style.display = 'none';
+    this.closest('.pack-visual, .pack-big').classList.add('no-art');
+  });
+});
+
+/* ---- Sonidos ---- */
+/* Los agrega el usuario con estos nombres exactos (si usás otra extensión, avisame y ajusto la ruta):
+   sonidos/corte-papel.mp3    -> al abrir el sobre
+   sonidos/desliz-carta.mp3   -> uno por cada figurita que se revela
+   sonidos/pegado-figurita.mp3 -> al pegar una figurita en el álbum */
+function playSound(path, volume){
+  try{
+    const audio = new Audio(path);
+    audio.volume = volume;
+    audio.play().catch((e)=>{ console.warn('[audio bloqueado o no encontrado]', path, e && e.message); });
+  }catch(e){ console.warn('[audio no se pudo cargar]', path, e && e.message); }
+}
+function playCutSound(){ playSound('sonidos/corte-papel.mp3', 0.7); }
+function playSlideSound(){ playSound('sonidos/desliz-carta.mp3', 0.6); }
+function playPasteSound(){ playSound('sonidos/pegado-figurita.mp3', 0.7); }
+function playAchievementSound(){ playSound('sonidos/logro-desbloqueado.mp3', 0.7); }
+
+/* ---- Ver el sobre a tamaño completo, elegir cuál (si hay más de un tipo) y tocarlo para abrirlo ---- */
+const packOpenOverlay = document.getElementById('packOpenOverlay');
+const packBig = document.getElementById('packBig');
+const packBigHint = document.getElementById('packBigHint');
+const packBigLabel = document.getElementById('packBigLabel');
+const packBigTicketNote = document.getElementById('packBigTicketNote');
+const packArrowLeft = document.getElementById('packArrowLeft');
+const packArrowRight = document.getElementById('packArrowRight');
+let pendingKind = null;
+let pendingFromInventory = false;
+let previewKinds = [];
+let previewIndex = 0;
+
+function distinctKinds(inv){
+  const seen = [];
+  for(const k of inv){ if(!seen.includes(k)) seen.push(k); }
+  return seen;
+}
+function countKind(inv, kind){ return inv.filter(k => k === kind).length; }
+
+function showPreviewKind(){
+  const kind = previewKinds[previewIndex];
+  pendingKind = kind;
+  const cfg = PACK_TYPES[kind] || PACK_TYPES.daily;
+  packBig.classList.remove('opening', 'no-art');
+  document.getElementById('packBigArt').src = cfg.art;
+  document.querySelector('#packBigTop img').src = cfg.art;
+  document.querySelector('#packBigBottom img').src = cfg.art;
+  packBigHint.textContent = 'Tocá el sobre para abrirlo';
+  if(pendingFromInventory){
+    const n = countKind(getInventory(), kind);
+    packBigLabel.textContent = cfg.label + (n > 1 ? ' (x' + n + ')' : '');
+  } else {
+    packBigLabel.textContent = cfg.label;
+  }
+  const showArrows = previewKinds.length > 1;
+  packArrowLeft.classList.toggle('show', showArrows);
+  packArrowRight.classList.toggle('show', showArrows);
+  packBigTicketNote.style.display = getLuckyTickets() > 0 ? 'block' : 'none';
+}
+function openPackPreview(kind, fromInventory){
+  pendingFromInventory = !!fromInventory;
+  if(fromInventory){
+    previewKinds = distinctKinds(getInventory());
+    previewIndex = Math.max(0, previewKinds.indexOf(kind));
+  } else {
+    previewKinds = [kind];
+    previewIndex = 0;
+  }
+  showPreviewKind();
+  packOpenOverlay.classList.add('show');
+}
+packArrowLeft.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  if(previewKinds.length < 2) return;
+  previewIndex = (previewIndex - 1 + previewKinds.length) % previewKinds.length;
+  showPreviewKind();
+});
+packArrowRight.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  if(previewKinds.length < 2) return;
+  previewIndex = (previewIndex + 1) % previewKinds.length;
+  showPreviewKind();
+});
+packBig.addEventListener('click', ()=>{
+  if(packBig.classList.contains('opening') || !pendingKind) return;
+  playCutSound();
+  packBig.classList.add('opening');
+  packBigHint.textContent = '';
+  packArrowLeft.classList.remove('show'); packArrowRight.classList.remove('show');
+  setTimeout(()=>{
+    packOpenOverlay.classList.remove('show');
+    packBig.classList.remove('opening');
+    const kind = pendingKind;
+    const fromInv = pendingFromInventory;
+    pendingKind = null; pendingFromInventory = false; previewKinds = []; previewIndex = 0;
+    if(fromInv){
+      const inv = getInventory();
+      const idx = inv.indexOf(kind);
+      if(idx > -1) inv.splice(idx, 1);
+      setInventory(inv);
+      renderPackStack();
+    }
+    runPull(kind);
+  }, 480);
+});
+document.getElementById('packOpenClose').addEventListener('click', ()=>{
+  pendingKind = null; pendingFromInventory = false; previewKinds = []; previewIndex = 0;
+  packOpenOverlay.classList.remove('show');
+});
+
+/* ============ OPEN PACK / REVEAL ============ */
+const revealOverlay = document.getElementById('revealOverlay');
+const pullGrid = document.getElementById('pullGrid');
+let pendingPulls = null;
+
+function runPull(kind){
+  const cfg = PACK_TYPES[kind] || PACK_TYPES.daily;
+  pendingPulls = pullPack(cfg.count, cfg.tier);
+  bumpStat('packsOpened', 1);
+  if(kind === 'shopE') bumpStat('exclusivePacksOpened', 1);
+  refreshPackUI(); refreshTicketLine();
+  checkAchievements();
+  const hasLR = pendingPulls.some(p => p.variant.rareza === 'LR');
+  if(hasLR){
+    showLRVideo(() => { buildPullGrid(); revealOverlay.classList.add('show'); });
+  } else {
+    buildPullGrid();
+    revealOverlay.classList.add('show');
+  }
+}
+function buildPullGrid(){
+  pullGrid.innerHTML = '';
+  pendingPulls.forEach((p, i) => {
+    const { card, variant } = p;
+    const isDup = ownsVariant(card.id, variant.rareza, variant.alternativa);
+    const item = document.createElement('div');
+    item.className = 'pull-item';
+    const cardEl = document.createElement('div');
+    cardEl.className = 'modal-card reveal' + (variant.rareza === 'LR' ? ' is-LR' : '');
+    cardEl.style.animationDelay = (i * 0.08) + 's';
+    cardEl.style.width = 'min(150px, 26vw)';
+    const img = document.createElement('img');
+    img.src = cardImgSrc(variant.img);
+    img.onerror = () => { img.style.display='none'; cardEl.style.background = rarityFallbackBg(variant.rareza); };
+    cardEl.appendChild(img);
+    item.appendChild(cardEl);
+    const sub = document.createElement('div');
+    sub.className = 'modal-sub';
+    sub.innerHTML = rarityBadgeSVG(variant.rareza) + '<span>#' + card.id + (variant.alternativa ? ' · alt' : '') + '</span>';
+    item.appendChild(sub);
+    if(isDup){
+      const dup = document.createElement('div');
+      dup.className = 'dup-tag';
+      dup.innerHTML = coinIconSVG() + '<span>+' + COIN_VALUE[variant.rareza] + ' (repetida)</span>';
+      item.appendChild(dup);
+    }
+    pullGrid.appendChild(item);
+    setTimeout(playSlideSound, i * 80);
+  });
+}
+/* ---- Video especial cuando toca una LR (carpeta videos/BulmaLRanim.mp4) ---- */
+function showLRVideo(onDone){
+  const overlay = document.getElementById('lrVideoOverlay');
+  const video = document.getElementById('lrVideoEl');
+  let done = false;
+  const finish = () => {
+    if(done) return;
+    done = true;
+    overlay.classList.remove('show');
+    video.pause();
+    onDone();
+  };
+  video.onended = finish;
+  video.onerror = () => { console.warn('[video no se pudo cargar]', video.src); finish(); }; // si el archivo no está todavía, seguimos directo a la revelación
+  document.getElementById('lrVideoSkip').onclick = finish;
+  overlay.classList.add('show');
+  try{ video.currentTime = 0; }catch(e){}
+  video.play().catch((e)=>{ console.warn('[video bloqueado por el navegador]', e && e.message); /* el botón Saltar / los controles igual permiten seguir */ });
+}
+function finalizePull(){
+  if(pendingPulls){
+    let coinsEarned = 0;
+    for(const p of pendingPulls){
+      const { card, variant } = p;
+      if(ownsVariant(card.id, variant.rareza, variant.alternativa)){
+        coinsEarned += COIN_VALUE[variant.rareza];
+        bumpStat('dupesConverted', 1);
+      } else {
+        addNewVariant(card, variant);
+      }
+    }
+    if(coinsEarned > 0) addCoins(coinsEarned);
+    renderGrid();
+    checkAchievements();
+  }
+  revealOverlay.classList.remove('show');
+  pendingPulls = null;
+}
+document.getElementById('pasteBtn').addEventListener('click', finalizePull);
+document.getElementById('revealClose').addEventListener('click', finalizePull);
+
+/* ============ DETAIL / VARIANT SWITCH ============ */
+const detailOverlay = document.getElementById('detailOverlay');
+const detailCard = document.getElementById('detailCard');
+const detailImg = document.getElementById('detailImg');
+const detailTitle = document.getElementById('detailTitle');
+const detailSub = document.getElementById('detailSub');
+const variantSwitch = document.getElementById('variantSwitch');
+
+/* ============ LWF: animación de cartas LR (opcional, con fallback a imagen fija) ============
+   Requiere lwf.js + card-anim.js cargados como <script> aparte (ver arriba del todo del script).
+   Bajo file:// (doble click) se salta directo a la imagen fija, sin intentar nada — así el juego
+   sigue abriendo simple para cualquiera, y la animación es un plus solo cuando se sirve por
+   http(s) y existe la carpeta assets/<id>/ de esa carta puntual.
+   El "asset_id" de cada carta se saca de su propia URL de imagen (mismo número de carpeta que
+   dokkaninfo.com usa también para el .lwf), así que no hace falta cargar un mapeo aparte: con
+   solo poner la carpeta assets/<id>/ correspondiente, esa LR se anima sola. */
+const LWF_ANIM_ENABLED = location.protocol !== 'file:' && typeof LWF !== 'undefined' && typeof CardAnim !== 'undefined';
+const detailAnimCanvas = document.getElementById('detailAnimCanvas');
+let detailAnimInst = null;
+function assetIdFromImgUrl(url){
+  const m = (url || '').match(/\/character\/card\/(\d+)\//);
+  return m ? m[1] : null;
+}
+function stopDetailAnim(){
+  if(detailAnimInst){ detailAnimInst.destroy(); detailAnimInst = null; }
+  detailCard.classList.remove('lwf-active');
+}
+function tryAnimateDetail(v){
+  stopDetailAnim(); // corta cualquier animación anterior antes de intentar la nueva
+  if(!LWF_ANIM_ENABLED || v.rareza !== 'LR') return;
+  const assetId = assetIdFromImgUrl(v.img);
+  if(!assetId) return;
+  detailAnimInst = CardAnim.mount(detailAnimCanvas, assetId, {
+    onload: () => { detailCard.classList.add('lwf-active'); },
+    onerror: (url) => {
+      console.warn('[LWF] No se pudo animar assetId=' + assetId + ' (' + url + '). Se queda con la imagen fija.');
+      stopDetailAnim();
+    }
+  });
+}
+function closeDetailOverlay(){
+  stopDetailAnim();
+  detailOverlay.classList.remove('show');
+}
+
+function openDetail(card){
+  const entry = collection[card.id];
+  if(!entry) return;
+  renderDetail(card, entry.selected);
+  detailOverlay.classList.add('show');
+}
+function renderDetail(card, sel){
+  const v = findVariant(card, sel.rareza, sel.alternativa);
+  const entry = collection[card.id];
+  detailImg.src = cardImgSrc(v.img); detailImg.style.display='';
+  detailImg.onerror = () => { detailImg.style.display='none'; detailCard.style.background = rarityFallbackBg(v.rareza); };
+  detailCard.className = 'modal-card' + (v.rareza==='LR' ? ' is-LR' : '') + (entry.foil && v.rareza!=='LR' ? ' foil-effect' : '');
+  detailTitle.textContent = '#' + card.id + ' · ' + v.nombre;
+  detailSub.innerHTML = rarityBadgeSVG(v.rareza) + '<span>' + (v.alternativa ? 'Arte alternativo' : 'Arte estándar') + (entry.foil && v.rareza!=='LR' ? ' · Foil ✨' : '') + '</span>';
+  tryAnimateDetail(v);
+
+  variantSwitch.innerHTML = '';
+  if(entry.owned.length > 1){
+    for(const o of entry.owned){
+      const b = document.createElement('button');
+      b.innerHTML = rarityBadgeSVG(o.rareza) + '<span>' + (o.alternativa ? 'alt' : 'estándar') + '</span>';
+      if(o.rareza===sel.rareza && o.alternativa===sel.alternativa) b.classList.add('active');
+      b.addEventListener('click', ()=>{
+        entry.selected = { rareza:o.rareza, alternativa:o.alternativa };
+        saveCollection(collection);
+        renderDetail(card, entry.selected);
+        renderGrid();
+      });
+      variantSwitch.appendChild(b);
+    }
+  }
+  const tlBtn = document.getElementById('detailToTopLoaderBtn');
+  if(getEmptyToploaders() > 0){
+    tlBtn.style.display = '';
+    tlBtn.disabled = false;
+    tlBtn.textContent = 'Guardar en Top Loader';
+    tlBtn.onclick = () => {
+      if(!confirm('¿Sacar esta figurita del álbum y guardarla en un Top Loader? La casilla vuelve a quedar pendiente de otra figurita si tenés otra versión, o vacía si era la única.')) return;
+      moveToTopLoader(card.id);
+      closeDetailOverlay();
+    };
+  } else {
+    tlBtn.style.display = 'none';
+  }
+}
+document.getElementById('detailClose').addEventListener('click', closeDetailOverlay);
+
+/* ============ CÓDIGOS DE CANJE ============ */
+/* Para sumar un código nuevo: agregá una línea a REDEEM_CODES con { packs: { tipo: cantidad, ... } }.
+   Tipos válidos de sobre: daily, redeem, shop10, shopE (mismos que usan los logros). */
+const codeInput = document.getElementById('codeInput');
+const codeMsg = document.getElementById('codeMsg');
+document.getElementById('codeBtn').addEventListener('click', ()=>{
+  const code = (codeInput.value || '').trim().toUpperCase();
+  codeMsg.className = 'code-msg';
+  if(!code) return;
+  if(code === 'KAMISAMA'){
+    const on = !getTestMode();
+    setTestMode(on);
+    refreshPackUI();
+    refreshShopLimits();
+    codeMsg.textContent = on ? 'Modo prueba activado: sobres y compras de la tienda gratis e ilimitados.' : 'Modo prueba desactivado.';
+    codeMsg.classList.add('ok');
+    codeInput.value = '';
+    return;
+  }
+  const reward = REDEEM_CODES[code];
+  if(!reward){ codeMsg.textContent = 'Código inválido.'; codeMsg.classList.add('err'); return; }
+  const redeemed = getRedeemed();
+  if(redeemed.includes(code)){ codeMsg.textContent = 'Ese código ya fue usado en este dispositivo.'; codeMsg.classList.add('err'); return; }
+  redeemed.push(code); setRedeemed(redeemed);
+  const labels = [];
+  if(reward.packs){
+    for(const k in reward.packs){
+      addToInventory(k, reward.packs[k]);
+      labels.push((PACK_TYPES[k] || {}).label + ' x' + reward.packs[k]);
+    }
+  }
+  codeMsg.textContent = '¡Código canjeado! ' + (labels.join(', ') || 'Recompensa aplicada') + '.';
+  codeMsg.classList.add('ok');
+  codeInput.value = '';
+  refreshPackUI();
+  checkAchievements();
+});
+
+/* ============ EXPORT / IMPORT / RESET ============ */
+document.getElementById('exportBtn').addEventListener('click', ()=>{
+  const data = { collection, lastOpen: getLastOpen(), inventory: getInventory(), redeemed: getRedeemed(), coins: getCoins(), luckyTickets: getLuckyTickets(), stats: getStats(), achievements: getUnlockedAchievements(),
+    emptyToploaders: getEmptyToploaders(), emptyExpositors: getEmptyExpositors(), toploadedCards: getToploadedCards(), gradedCards: getGradedCards(),
+    profileNick: localStorage.getItem(LS_PROFILE_NICK) || '', profileBio: localStorage.getItem(LS_PROFILE_BIO) || '', profileAvatar: localStorage.getItem(LS_PROFILE_AVATAR) || '' };
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'album-dragonball-progreso.json'; a.click();
+});
+document.getElementById('importBtn').addEventListener('click', ()=> document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0]; if(!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try{
+      const data = JSON.parse(reader.result);
+      collection = data.collection || {};
+      saveCollection(collection);
+      if(data.lastOpen) setLastOpen(data.lastOpen);
+      if(Array.isArray(data.inventory)) setInventory(data.inventory);
+      if(Array.isArray(data.redeemed)) setRedeemed(data.redeemed);
+      if(typeof data.coins === 'number') setCoins(data.coins);
+      if(typeof data.luckyTickets === 'number') setLuckyTickets(data.luckyTickets);
+      if(data.stats && typeof data.stats === 'object') setStats(data.stats);
+      if(Array.isArray(data.achievements)) setUnlockedAchievements(data.achievements);
+      if(typeof data.emptyToploaders === 'number') setEmptyToploaders(data.emptyToploaders);
+      if(typeof data.emptyExpositors === 'number') setEmptyExpositors(data.emptyExpositors);
+      if(Array.isArray(data.toploadedCards)) setToploadedCards(data.toploadedCards);
+      if(Array.isArray(data.gradedCards)) setGradedCards(data.gradedCards);
+      if(typeof data.profileNick === 'string') localStorage.setItem(LS_PROFILE_NICK, data.profileNick);
+      if(typeof data.profileBio === 'string') localStorage.setItem(LS_PROFILE_BIO, data.profileBio);
+      if(typeof data.profileAvatar === 'string') localStorage.setItem(LS_PROFILE_AVATAR, data.profileAvatar);
+      loadProfileHeader();
+      renderGrid(); refreshPackUI(); refreshTicketLine(); checkAchievements();
+    }catch(err){ alert('No se pudo leer el archivo de progreso.'); }
+  };
+  reader.readAsText(file);
+});
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('¿Reiniciar todo tu progreso del álbum? Esta acción no se puede deshacer.')){
+    collection = {};
+    saveCollection(collection);
+    localStorage.removeItem(LS_LAST_OPEN);
+    localStorage.removeItem(LS_INVENTORY);
+    localStorage.removeItem(LS_REDEEMED);
+    localStorage.removeItem(LS_STATS);
+    localStorage.removeItem(LS_ACHIEVEMENTS);
+    localStorage.removeItem(LS_TOPLOADERS_EMPTY);
+    localStorage.removeItem(LS_EXPOSITORS_EMPTY);
+    localStorage.removeItem(LS_TOPLOADED_CARDS);
+    localStorage.removeItem(LS_GRADED_CARDS);
+    localStorage.removeItem(LS_SHOP_PURCHASES);
+    setCoins(0);
+    setLuckyTickets(0);
+    renderGrid(); refreshPackUI(); refreshTicketLine(); refreshShopLimits();
+    if(document.getElementById('view-perfil').classList.contains('active')){ renderToploaders(); renderGraded(); }
+    if(document.getElementById('view-logros').classList.contains('active')){ renderAchievements(); }
+  }
+});
+
+/* ============ COMPARTIR ============ */
+function shareText(){ return '¡Estoy armando mi álbum de figuritas Dragon Ball! Llevo ' + countOwnedSlots() + '/' + CARDS.length + ' figuritas conseguidas 🐉'; }
+document.getElementById('shareWA').addEventListener('click', (e)=>{ e.preventDefault(); window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(shareText()), '_blank'); });
+document.getElementById('shareTW').addEventListener('click', (e)=>{ e.preventDefault(); window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(shareText()), '_blank'); });
+document.getElementById('shareFB').addEventListener('click', (e)=>{ e.preventDefault(); window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(location.href), '_blank'); });
+document.getElementById('shareCopy').addEventListener('click', async ()=>{ try{ await navigator.clipboard.writeText(shareText()); alert('Texto copiado al portapapeles.'); } catch(e){ alert(shareText()); } });
+
+/* ============ TIENDA: comprar sobre (se suman a la pila, no se abren solos) ============
+   En Modo Prueba TODA compra de la tienda es gratis e ilimitada (no gasta monedas ni cuenta
+   contra el límite diario del ítem). Fuera de Modo Prueba, cada ítem respeta su tope diario
+   (SHOP_LIMITS) pensado para cuidar la economía del juego. */
+function buyPackToInventory(kind, cost, limitKey){
+  limitKey = limitKey || kind;
+  if(!canPurchase(limitKey)){ alert(limitReachedMsg()); return; }
+  const free = getTestMode();
+  if(!free && getCoins() < cost){ alert('No te alcanzan las monedas rojas para este sobre.'); return; }
+  if(!free) addCoins(-cost);
+  addToInventory(kind);
+  registerPurchase(limitKey);
+  bumpStat('shopPurchases', 1);
+  renderPackStack();
+  refreshPackUI();
+  refreshShopLimits();
+  checkAchievements();
+  alert((PACK_TYPES[kind].label || 'Sobre') + ' agregado a tu pila.');
+}
+document.getElementById('buyPackBtn').addEventListener('click', ()=> buyPackToInventory('shop5', SHOP_PACK_COST));
+document.getElementById('buyPack10Btn').addEventListener('click', ()=> buyPackToInventory('shop10', SHOP_PACK10_COST));
+document.getElementById('buyExclusiveBtn').addEventListener('click', ()=> buyPackToInventory('shopE', SHOP_EXCLUSIVE_COST));
+document.getElementById('buyLegendaryBtn').addEventListener('click', ()=> buyPackToInventory('legendary', SHOP_LEGENDARY_COST));
+document.getElementById('buyTicketBtn').addEventListener('click', ()=>{
+  if(!canPurchase('ticket')){ alert(limitReachedMsg()); return; }
+  const free = getTestMode();
+  if(!free && getCoins() < SHOP_TICKET_COST){ alert('No te alcanzan las monedas rojas para el ticket.'); return; }
+  if(!free) addCoins(-SHOP_TICKET_COST);
+  setLuckyTickets(getLuckyTickets() + 1);
+  registerPurchase('ticket');
+  bumpStat('shopPurchases', 1);
+  refreshTicketLine();
+  refreshPackUI();
+  refreshShopLimits();
+  checkAchievements();
+  alert('¡Ticket de la suerte comprado! Se va a usar automáticamente en tu próximo sobre.');
+});
+document.getElementById('buyToploaderBtn').addEventListener('click', ()=>{
+  if(!canPurchase('toploader')){ alert(limitReachedMsg()); return; }
+  const free = getTestMode();
+  if(!free && getCoins() < SHOP_TOPLOADER_COST){ alert('No te alcanzan las monedas rojas para el top loader.'); return; }
+  if(!free) addCoins(-SHOP_TOPLOADER_COST);
+  setEmptyToploaders(getEmptyToploaders() + 1);
+  registerPurchase('toploader');
+  bumpStat('shopPurchases', 1);
+  refreshShopLimits();
+  checkAchievements();
+  alert('¡Top Loader comprado! Andá al detalle de una figurita pegada en el álbum para guardarla ahí.');
+});
+document.getElementById('buyExpositorBtn').addEventListener('click', ()=>{
+  if(!canPurchase('expositor')){ alert(limitReachedMsg()); return; }
+  const free = getTestMode();
+  if(!free && getCoins() < SHOP_EXPOSITOR_COST){ alert('No te alcanzan las monedas rojas para el expositor.'); return; }
+  if(!free) addCoins(-SHOP_EXPOSITOR_COST);
+  setEmptyExpositors(getEmptyExpositors() + 1);
+  registerPurchase('expositor');
+  bumpStat('shopPurchases', 1);
+  refreshShopLimits();
+  checkAchievements();
+  alert('¡Expositor comprado! Usalo desde tu Perfil para graduar una figurita guardada en un Top Loader.');
+});
+document.getElementById('buyMysteryBtn').addEventListener('click', ()=>{
+  if(!canPurchase('mystery')){ alert(limitReachedMsg()); return; }
+  const free = getTestMode();
+  if(!free && getCoins() < SHOP_MYSTERY_COST){ alert('No te alcanzan las monedas rojas para la caja sorpresa.'); return; }
+  if(!free) addCoins(-SHOP_MYSTERY_COST);
+  registerPurchase('mystery');
+  bumpStat('shopPurchases', 1);
+  const roll = Math.random();
+  let msg;
+  if(roll < 0.35){ setLuckyTickets(getLuckyTickets() + 1); refreshTicketLine(); msg = '¡Un Ticket de la suerte!'; }
+  else if(roll < 0.65){ setEmptyToploaders(getEmptyToploaders() + 1); msg = '¡Un Top Loader!'; }
+  else if(roll < 0.85){ setEmptyExpositors(getEmptyExpositors() + 1); msg = '¡Un Expositor!'; }
+  else { addToInventory('shop5'); renderPackStack(); msg = '¡Un Sobre de 5 figuritas!'; }
+  refreshPackUI();
+  refreshShopLimits();
+  checkAchievements();
+  alert('¡Baba abre la caja sorpresa y te da: ' + msg + '!');
+});
+function refreshTicketLine(){
+  const n = getLuckyTickets();
+  document.getElementById('ticketLine').textContent = n > 0 ? ('Tickets de la suerte guardados: ' + n) : '';
+}
+
+/* ============ TIENDA: comprar foil ============ */
+const foilPickerOverlay = document.getElementById('foilPickerOverlay');
+const foilPickerGrid = document.getElementById('foilPickerGrid');
+document.getElementById('buyFoilBtn').addEventListener('click', ()=>{
+  if(!canPurchase('foil')){ alert(limitReachedMsg()); return; }
+  const ownedNonLR = CARDS.filter(c => {
+    const entry = collection[c.id];
+    if(!entry) return false;
+    const v = findVariant(c, entry.selected.rareza, entry.selected.alternativa);
+    return v.rareza !== 'LR';
+  });
+  if(ownedNonLR.length === 0){ alert('Todavía no tenés ninguna figurita elegible (no-LR) para aplicarle el efecto Foil.'); return; }
+  document.getElementById('foilPickerSub').textContent = 'Costo: ' + SHOP_FOIL_COST + ' monedas rojas · Tenés ' + getCoins();
+  foilPickerGrid.innerHTML = '';
+  for(const c of ownedNonLR){
+    const entry = collection[c.id];
+    const v = findVariant(c, entry.selected.rareza, entry.selected.alternativa);
+    const pslot = document.createElement('div');
+    pslot.className = 'pslot' + (entry.foil ? ' has-foil' : '');
+    const img = document.createElement('img'); img.src = cardImgSrc(v.img);
+    img.onerror = () => { img.style.display='none'; pslot.style.background = rarityFallbackBg(v.rareza); };
+    pslot.appendChild(img);
+    const tag = document.createElement('div'); tag.className='pf-tag'; tag.textContent = entry.foil ? 'Ya tiene foil' : ('#' + c.id);
+    pslot.appendChild(tag);
+    pslot.addEventListener('click', ()=>{
+      if(entry.foil){ alert('Esa figurita ya tiene el efecto Foil.'); return; }
+      if(!canPurchase('foil')){ alert(limitReachedMsg()); return; }
+      const free = getTestMode();
+      if(!free && getCoins() < SHOP_FOIL_COST){ alert('No te alcanzan las monedas rojas.'); return; }
+      if(!confirm('¿Aplicar el efecto Foil a #' + c.id + ' · ' + v.nombre + ' por ' + SHOP_FOIL_COST + ' monedas rojas?')) return;
+      if(!free) addCoins(-SHOP_FOIL_COST);
+      entry.foil = true;
+      saveCollection(collection);
+      registerPurchase('foil');
+      bumpStat('shopPurchases', 1);
+      renderGrid();
+      refreshShopLimits();
+      checkAchievements();
+      foilPickerOverlay.classList.remove('show');
+    });
+    foilPickerGrid.appendChild(pslot);
+  }
+  foilPickerOverlay.classList.add('show');
+});
+document.getElementById('foilPickerClose').addEventListener('click', ()=> foilPickerOverlay.classList.remove('show'));
+
+/* ============ NAV / VISTAS ============ */
+function setView(view){
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + view).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
+  if(view === 'perfil'){ renderToploaders(); renderGraded(); loadProfileHeader(); }
+  if(view === 'logros'){ renderAchievements(); }
+  if(view === 'tienda'){ refreshShopLimits(); }
+}
+document.querySelectorAll('.nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => setView(btn.dataset.view));
+});
+
+/* ============ INIT ============ */
+/* Arte de sobres y título ligados a la saga actual (ver el objeto en SAGAS, arriba del todo) */
+for(const key in CURRENT_SAGA.packs){ if(PACK_TYPES[key]) PACK_TYPES[key].art = CURRENT_SAGA.packs[key]; }
+if(CURRENT_SAGA.packs.shop5){ PACK_TYPES.daily.art = CURRENT_SAGA.packs.shop5; PACK_TYPES.redeem.art = CURRENT_SAGA.packs.shop5; }
+const promoImgEl = document.querySelector('.promo-img');
+if(promoImgEl && CURRENT_SAGA.promo) promoImgEl.src = CURRENT_SAGA.promo;
+if(CURRENT_SAGA.titulo) document.title = CURRENT_SAGA.titulo;
+
+document.getElementById('coinIcon').innerHTML = coinIconSVG();
+document.getElementById('shopFoilIcon').innerHTML = '<svg viewBox="0 0 100 100"><rect x="20" y="8" width="60" height="84" rx="6" fill="#8659c9"/><rect x="20" y="8" width="60" height="84" rx="6" fill="url(#g)" opacity="0.7"/><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#ff6a1a"/><stop offset="50%" stop-color="#ff3d7f"/><stop offset="100%" stop-color="#e3b23c"/></linearGradient></defs></svg>';
+document.getElementById('shopPackPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopPack10PriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopExclusivePriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopLegendaryPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopFoilPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopTicketPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopToploaderPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopExpositorPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopMysteryPriceIcon').innerHTML = coinIconSVG();
+document.getElementById('shopPackPrice').textContent = SHOP_PACK_COST;
+document.getElementById('shopPack10Price').textContent = SHOP_PACK10_COST;
+document.getElementById('shopExclusivePrice').textContent = SHOP_EXCLUSIVE_COST;
+document.getElementById('shopLegendaryPrice').textContent = SHOP_LEGENDARY_COST;
+document.getElementById('shopFoilPrice').textContent = SHOP_FOIL_COST;
+document.getElementById('shopTicketPrice').textContent = SHOP_TICKET_COST;
+document.getElementById('shopToploaderPrice').textContent = SHOP_TOPLOADER_COST;
+document.getElementById('shopExpositorPrice').textContent = SHOP_EXPOSITOR_COST;
+document.getElementById('shopMysteryPrice').textContent = SHOP_MYSTERY_COST;
+refreshTicketLine();
+refreshShopLimits();
+
+renderGrid();
+refreshPackUI();
+updateCoinUI();
+checkAchievements();
+loadProfileHeader();
+</script>
+</body>
+</html>
