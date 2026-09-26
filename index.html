@@ -885,8 +885,10 @@
 
 <!-- Datos de la saga (cartas, arte de sobres, promo). Se carga como archivo aparte, igual que
      lwf.js o card-anim.js, y NO con fetch, para que este HTML siga abriendo con doble click
-     sin depender de un servidor. -->
-<script src="data/dbsaga.js"></script>
+     sin depender de un servidor. El "?v=" es cache-busting: sin esto, el navegador puede seguir
+     sirviendo una copia vieja cacheada de este archivo después de actualizarlo. Subir el número
+     cada vez que se reemplaza data/dbsaga.js por una versión nueva. -->
+<script src="data/dbsaga.js?v=2"></script>
 
 <script>
 /* ============ DATA ============
@@ -930,14 +932,19 @@ const SHOP_LIMITS = {
   shop5: 8,
   shop10: 4,
   shopE: 2,
-  legendary: 1,
   foil: 5,
   ticket: 3,
   toploader: 10,
   expositor: 6,
   mystery: 3
 };
+/* ---- Límites de por vida: a diferencia de SHOP_LIMITS, estos NUNCA se resetean solos.
+   El Sobre Legendario es único por cuenta (se puede volver a comprar si se reinicia la partida). */
+const SHOP_LIFETIME_LIMITS = {
+  legendary: 1
+};
 const LS_SHOP_PURCHASES = 'dba_dragonball_shop_purchases_v1';
+const LS_SHOP_LIFETIME = 'dba_dragonball_shop_lifetime_v1';
 function todayKey(){ const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
 function getShopPurchases(){
   try{
@@ -947,8 +954,14 @@ function getShopPurchases(){
   return {};
 }
 function saveShopPurchases(counts){ localStorage.setItem(LS_SHOP_PURCHASES, JSON.stringify({ date: todayKey(), counts })); }
+function getLifetimePurchases(){
+  try{ return JSON.parse(localStorage.getItem(LS_SHOP_LIFETIME) || '{}'); }catch(e){ return {}; }
+}
+function saveLifetimePurchases(counts){ localStorage.setItem(LS_SHOP_LIFETIME, JSON.stringify(counts)); }
 function getPurchaseCount(key){ return getShopPurchases()[key] || 0; }
+function getLifetimeCount(key){ return getLifetimePurchases()[key] || 0; }
 function remainingPurchases(key){
+  if(SHOP_LIFETIME_LIMITS[key] != null) return Math.max(0, SHOP_LIFETIME_LIMITS[key] - getLifetimeCount(key));
   const max = SHOP_LIMITS[key];
   if(max == null) return Infinity;
   return Math.max(0, max - getPurchaseCount(key));
@@ -956,18 +969,32 @@ function remainingPurchases(key){
 function canPurchase(key){ return getTestMode() || remainingPurchases(key) > 0; }
 function registerPurchase(key){
   if(getTestMode()) return; // modo prueba: no se gasta ni se cuenta contra el límite
+  if(SHOP_LIFETIME_LIMITS[key] != null){
+    const counts = getLifetimePurchases();
+    counts[key] = (counts[key] || 0) + 1;
+    saveLifetimePurchases(counts);
+    return;
+  }
   const counts = getShopPurchases();
   counts[key] = (counts[key] || 0) + 1;
   saveShopPurchases(counts);
 }
-function limitReachedMsg(){ return 'Ya llegaste al límite diario de compras para este ítem. Probá de nuevo mañana.'; }
+function limitReachedMsg(key){
+  if(SHOP_LIFETIME_LIMITS[key] != null) return 'Este ítem es único por cuenta: ya lo compraste.';
+  return 'Ya llegaste al límite diario de compras para este ítem. Probá de nuevo mañana.';
+}
 function refreshShopLimits(){
-  for(const key in SHOP_LIMITS){
+  const keys = new Set([...Object.keys(SHOP_LIMITS), ...Object.keys(SHOP_LIFETIME_LIMITS)]);
+  for(const key of keys){
     const el = document.getElementById('limit_' + key);
     if(!el) continue;
     if(getTestMode()){ el.textContent = 'Modo prueba: sin límite'; continue; }
     const left = remainingPurchases(key);
-    el.textContent = left > 0 ? ('Quedan ' + left + '/' + SHOP_LIMITS[key] + ' hoy') : 'Límite diario alcanzado';
+    if(SHOP_LIFETIME_LIMITS[key] != null){
+      el.textContent = left > 0 ? 'Único por cuenta' : 'Único por cuenta · ya comprado';
+    } else {
+      el.textContent = left > 0 ? ('Quedan ' + left + '/' + SHOP_LIMITS[key] + ' hoy') : 'Límite diario alcanzado';
+    }
   }
 }
 
@@ -1041,12 +1068,15 @@ const ACHIEVEMENTS = [
      title, desc, condition (función sin argumentos que devuelve true/false),
      reward ({ packs:{tipo:cantidad}, coins:N }), progress (opcional, para
      mostrar una barra "3/7": función que devuelve [actual, objetivo]).
-     Tipos de sobre válidos en reward.packs: daily, shop10, shopE.
+     Tipos de sobre válidos en reward.packs: daily, shop5, shop10, shopE, legendary.
      Helpers disponibles para condition: ownsAllCharacters([...]) (tenés
      TODOS los personajes listados), ownsCountOf([...]) (cuántos de una
-     lista tenés), hasRarityOwned('UR'|'LR'|etc), getStats() (contadores:
-     packsOpened, dupesConverted, shopPurchases, ticketsUsed,
-     exclusivePacksOpened), countOwnedSlots(), CARDS.length.
+     lista tenés), ownsAllTagged('(Etiqueta)') (tenés TODAS las cartas cuyo
+     nombre incluye esa etiqueta, ej. '(Crossover)' o '(Película)'),
+     countTagged('(Etiqueta)') (para progress: devuelve [conseguidas, total]),
+     hasRarityOwned('UR'|'LR'|etc), getStats() (contadores: packsOpened,
+     dupesConverted, shopPurchases, ticketsUsed, exclusivePacksOpened),
+     countOwnedSlots(), CARDS.length, countOwnedAltSlots(), ALT_CARDS.length.
      ====================================================================== */
   { id:'budokai', icon:'🥋', title:'Torneo de las Artes Marciales', desc:'Consigue a Jackie Chun, Maestro Tsuru y Nam.',
     condition: () => ownsAllCharacters(['Jackie Chun','Tsuru','Nam']), reward: { packs:{ daily:1 } } },
@@ -1061,7 +1091,7 @@ const ACHIEVEMENTS = [
   { id:'foil_x3', icon:'✨', title:'Con estilo', desc:'Aplicá el efecto Foil a 3 figuritas distintas.',
     condition: () => Object.values(collection).filter(e => e.foil).length >= 3, reward: { packs:{ daily:1 }, coins:100 },
     progress: () => [Object.values(collection).filter(e => e.foil).length, 3] },
-  { id:'full_album', icon:'🏆', title:'Dokkan Completo', desc:'Completá el álbum entero: las 63 figuritas.',
+  { id:'full_album', icon:'🏆', title:'Dokkan Completo', desc:'Completá el álbum entero: todas las figuritas.',
     condition: () => countOwnedSlots() >= CARDS.length, reward: { packs:{ shopE:2 }, coins:500 },
     progress: () => [countOwnedSlots(), CARDS.length] },
   { id:'ticket_used', icon:'🎫', title:'Con la suerte de cara', desc:'Usá tu primer Ticket de la Suerte.',
@@ -1074,6 +1104,15 @@ const ACHIEVEMENTS = [
     condition: () => getStats().cardsToploaded >= 1, reward: { packs:{ daily:1 } } },
   { id:'perfect_grade', icon:'🏅', title:'Calidad Perfecta', desc:'Conseguí una figurita graduada calidad Z.',
     condition: () => getStats().zGradesObtained >= 1, reward: { packs:{ shopE:1 }, coins:200 } },
+  { id:'crossover_complete', icon:'🌀', title:'Choque de Universos', desc:'Conseguí a todos los personajes Crossover.',
+    condition: () => ownsAllTagged('(Crossover)'), reward: { packs:{ shop10:1 }, coins:200 },
+    progress: () => countTagged('(Crossover)') },
+  { id:'movies_complete', icon:'🎬', title:'Estrella de Cine', desc:'Conseguí a todos los personajes de Película.',
+    condition: () => ownsAllTagged('(Película)'), reward: { packs:{ shop10:1 }, coins:200 },
+    progress: () => countTagged('(Película)') },
+  { id:'all_alternates', icon:'🎨', title:'Coleccionista de Artes', desc:'Conseguí todas las figuritas con arte alternativo.',
+    condition: () => ALT_CARDS.length > 0 && countOwnedAltSlots() >= ALT_CARDS.length, reward: { packs:{ shopE:1 }, coins:300 },
+    progress: () => [countOwnedAltSlots(), ALT_CARDS.length] },
 ];
 
 function getStats(){
@@ -1100,6 +1139,20 @@ function ownsAllCharacters(fragments){
 }
 function ownsCountOf(fragments){
   return fragments.filter(frag => CARDS.some(c => collection[c.id] && normalizeName(c.nombre).includes(normalizeName(frag)))).length;
+}
+/* Para logros de "conseguí todo el grupo X" donde el grupo se identifica por una etiqueta
+   en el nombre de la carta (ej. "(Crossover)", "(Película)"), en vez de una lista fija de
+   personajes. cardsTagged() siempre relee CARDS, así que escala solo con las cartas que haya. */
+function cardsTagged(tag){
+  return CARDS.filter(c => c.nombre.includes(tag));
+}
+function countTagged(tag){
+  const list = cardsTagged(tag);
+  return [list.filter(c => collection[c.id]).length, list.length];
+}
+function ownsAllTagged(tag){
+  const list = cardsTagged(tag);
+  return list.length > 0 && list.every(c => collection[c.id]);
 }
 function grantAchievementReward(ach){
   if(ach.reward.packs){ for(const k in ach.reward.packs){ addToInventory(k, ach.reward.packs[k]); } }
@@ -1558,7 +1611,7 @@ function pullPack(count, tier){
       pulls[pulls.length - 1] = weightedPick(POOL_UR_PLUS);
     }
   } else if(tier === 'lr'){
-    /* Sobre Legendario: garantiza SIEMPRE al menos una LR, por eso es caro y con límite diario de 1 */
+    /* Sobre Legendario: garantiza SIEMPRE al menos una LR, por eso es caro y único por cuenta (ver SHOP_LIFETIME_LIMITS) */
     const hasLR = pulls.some(p => p.variant.rareza === 'LR');
     if(!hasLR){
       pulls[pulls.length - 1] = weightedPick(POOL_LR_ONLY);
@@ -2144,6 +2197,7 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
     localStorage.removeItem(LS_TOPLOADED_CARDS);
     localStorage.removeItem(LS_GRADED_CARDS);
     localStorage.removeItem(LS_SHOP_PURCHASES);
+    localStorage.removeItem(LS_SHOP_LIFETIME);
     setCoins(0);
     setLuckyTickets(0);
     renderGrid(); refreshPackUI(); refreshTicketLine(); refreshShopLimits();
@@ -2165,7 +2219,7 @@ document.getElementById('shareCopy').addEventListener('click', async ()=>{ try{ 
    (SHOP_LIMITS) pensado para cuidar la economía del juego. */
 function buyPackToInventory(kind, cost, limitKey){
   limitKey = limitKey || kind;
-  if(!canPurchase(limitKey)){ alert(limitReachedMsg()); return; }
+  if(!canPurchase(limitKey)){ alert(limitReachedMsg(limitKey)); return; }
   const free = getTestMode();
   if(!free && getCoins() < cost){ alert('No te alcanzan las monedas rojas para este sobre.'); return; }
   if(!free) addCoins(-cost);
@@ -2183,7 +2237,7 @@ document.getElementById('buyPack10Btn').addEventListener('click', ()=> buyPackTo
 document.getElementById('buyExclusiveBtn').addEventListener('click', ()=> buyPackToInventory('shopE', SHOP_EXCLUSIVE_COST));
 document.getElementById('buyLegendaryBtn').addEventListener('click', ()=> buyPackToInventory('legendary', SHOP_LEGENDARY_COST));
 document.getElementById('buyTicketBtn').addEventListener('click', ()=>{
-  if(!canPurchase('ticket')){ alert(limitReachedMsg()); return; }
+  if(!canPurchase('ticket')){ alert(limitReachedMsg('ticket')); return; }
   const free = getTestMode();
   if(!free && getCoins() < SHOP_TICKET_COST){ alert('No te alcanzan las monedas rojas para el ticket.'); return; }
   if(!free) addCoins(-SHOP_TICKET_COST);
@@ -2197,7 +2251,7 @@ document.getElementById('buyTicketBtn').addEventListener('click', ()=>{
   alert('¡Ticket de la suerte comprado! Se va a usar automáticamente en tu próximo sobre.');
 });
 document.getElementById('buyToploaderBtn').addEventListener('click', ()=>{
-  if(!canPurchase('toploader')){ alert(limitReachedMsg()); return; }
+  if(!canPurchase('toploader')){ alert(limitReachedMsg('toploader')); return; }
   const free = getTestMode();
   if(!free && getCoins() < SHOP_TOPLOADER_COST){ alert('No te alcanzan las monedas rojas para el top loader.'); return; }
   if(!free) addCoins(-SHOP_TOPLOADER_COST);
@@ -2209,7 +2263,7 @@ document.getElementById('buyToploaderBtn').addEventListener('click', ()=>{
   alert('¡Top Loader comprado! Andá al detalle de una figurita pegada en el álbum para guardarla ahí.');
 });
 document.getElementById('buyExpositorBtn').addEventListener('click', ()=>{
-  if(!canPurchase('expositor')){ alert(limitReachedMsg()); return; }
+  if(!canPurchase('expositor')){ alert(limitReachedMsg('expositor')); return; }
   const free = getTestMode();
   if(!free && getCoins() < SHOP_EXPOSITOR_COST){ alert('No te alcanzan las monedas rojas para el expositor.'); return; }
   if(!free) addCoins(-SHOP_EXPOSITOR_COST);
@@ -2221,7 +2275,7 @@ document.getElementById('buyExpositorBtn').addEventListener('click', ()=>{
   alert('¡Expositor comprado! Usalo desde tu Perfil para graduar una figurita guardada en un Top Loader.');
 });
 document.getElementById('buyMysteryBtn').addEventListener('click', ()=>{
-  if(!canPurchase('mystery')){ alert(limitReachedMsg()); return; }
+  if(!canPurchase('mystery')){ alert(limitReachedMsg('mystery')); return; }
   const free = getTestMode();
   if(!free && getCoins() < SHOP_MYSTERY_COST){ alert('No te alcanzan las monedas rojas para la caja sorpresa.'); return; }
   if(!free) addCoins(-SHOP_MYSTERY_COST);
@@ -2247,7 +2301,7 @@ function refreshTicketLine(){
 const foilPickerOverlay = document.getElementById('foilPickerOverlay');
 const foilPickerGrid = document.getElementById('foilPickerGrid');
 document.getElementById('buyFoilBtn').addEventListener('click', ()=>{
-  if(!canPurchase('foil')){ alert(limitReachedMsg()); return; }
+  if(!canPurchase('foil')){ alert(limitReachedMsg('foil')); return; }
   const ownedNonLR = CARDS.filter(c => {
     const entry = collection[c.id];
     if(!entry) return false;
@@ -2269,7 +2323,7 @@ document.getElementById('buyFoilBtn').addEventListener('click', ()=>{
     pslot.appendChild(tag);
     pslot.addEventListener('click', ()=>{
       if(entry.foil){ alert('Esa figurita ya tiene el efecto Foil.'); return; }
-      if(!canPurchase('foil')){ alert(limitReachedMsg()); return; }
+      if(!canPurchase('foil')){ alert(limitReachedMsg('foil')); return; }
       const free = getTestMode();
       if(!free && getCoins() < SHOP_FOIL_COST){ alert('No te alcanzan las monedas rojas.'); return; }
       if(!confirm('¿Aplicar el efecto Foil a #' + c.id + ' · ' + v.nombre + ' por ' + SHOP_FOIL_COST + ' monedas rojas?')) return;
