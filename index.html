@@ -313,6 +313,20 @@
     100%{ transform: rotateY(0) scale(1); opacity:1; }
   }
   .modal-card.is-LR{ box-shadow: 0 0 40px 6px rgba(255,140,60,0.55), 0 20px 50px rgba(0,0,0,0.6); }
+
+  /* ---------- Tilt 3D al inspeccionar una carta (estilo Steam trading cards) ----------
+     Solo en #detailCard. El JS calcula el ángulo según la posición del mouse/dedo y lo
+     aplica como transform inline; acá solo dejamos la transición de "vuelta al reposo"
+     y el brillo que sigue al puntero. */
+  .modal-wrap{ perspective: 900px; }
+  .tilt-card{ transition: transform .45s cubic-bezier(.2,.8,.2,1); will-change: transform; cursor: grab; }
+  .tilt-card.tilting{ transition: none; }
+  .card-glare{
+    position:absolute; inset:0; z-index:6; pointer-events:none; border-radius:inherit;
+    background: radial-gradient(circle at var(--px,50%) var(--py,50%), rgba(255,255,255,0.55), rgba(255,255,255,0) 55%);
+    mix-blend-mode: overlay; opacity:0; transition: opacity .25s ease;
+  }
+  .tilt-card.tilting .card-glare{ opacity:1; }
   .modal-title{ font-family:'Bungee'; color:#f6ecd2; text-align:center; font-size:16px; }
   .modal-sub{ color:#c9bfe0; font-size:12px; text-align:center; margin-top:-6px; display:flex; align-items:center; gap:6px; justify-content:center;}
   .modal-sub .rarity-badge{ width:26px; height:26px; }
@@ -811,9 +825,10 @@
 <div class="overlay" id="detailOverlay">
   <button class="close-x" id="detailClose">&times;</button>
   <div class="modal-wrap">
-    <div class="modal-card" id="detailCard">
+    <div class="modal-card tilt-card" id="detailCard">
       <img id="detailImg" alt="">
       <canvas id="detailAnimCanvas" class="modal-card-canvas" width="426" height="568"></canvas>
+      <div class="card-glare" id="detailGlare"></div>
     </div>
     <div class="modal-title" id="detailTitle"></div>
     <div class="modal-sub" id="detailSub"></div>
@@ -2056,8 +2071,37 @@ function tryAnimateDetail(v){
     }
   });
 }
+/* ============ TILT 3D al inspeccionar (estilo Steam trading cards) ============
+   Solo en #detailCard. Sigue el mouse/dedo con rotación 3D + un "levante" hacia el
+   visor (scale) + un brillo que se mueve con el puntero. Puramente cosmético: no
+   toca nada de LWF, foil ni la lógica del juego. */
+const detailGlare = document.getElementById('detailGlare');
+const TILT_MAX_DEG = 16;
+const TILT_LIFT_SCALE = 1.07;
+function tiltMove(clientX, clientY){
+  const rect = detailCard.getBoundingClientRect();
+  const px = (clientX - rect.left) / rect.width;   // 0..1
+  const py = (clientY - rect.top) / rect.height;   // 0..1
+  const rotY = (Math.min(1, Math.max(0, px)) - 0.5) * TILT_MAX_DEG * 2;
+  const rotX = (0.5 - Math.min(1, Math.max(0, py))) * TILT_MAX_DEG * 2;
+  detailCard.style.transform = 'perspective(900px) rotateX(' + rotX.toFixed(2) + 'deg) rotateY(' + rotY.toFixed(2) + 'deg) scale3d(' + TILT_LIFT_SCALE + ',' + TILT_LIFT_SCALE + ',' + TILT_LIFT_SCALE + ')';
+  detailGlare.style.setProperty('--px', (px * 100).toFixed(1) + '%');
+  detailGlare.style.setProperty('--py', (py * 100).toFixed(1) + '%');
+}
+function tiltReset(){
+  detailCard.classList.remove('tilting');
+  detailCard.style.transform = '';
+}
+detailCard.addEventListener('mouseenter', () => detailCard.classList.add('tilting'));
+detailCard.addEventListener('mousemove', (e) => tiltMove(e.clientX, e.clientY));
+detailCard.addEventListener('mouseleave', tiltReset);
+detailCard.addEventListener('touchstart', () => detailCard.classList.add('tilting'), { passive:true });
+detailCard.addEventListener('touchmove', (e) => { const t = e.touches[0]; if(t) tiltMove(t.clientX, t.clientY); }, { passive:true });
+detailCard.addEventListener('touchend', tiltReset);
+
 function closeDetailOverlay(){
   stopDetailAnim();
+  tiltReset();
   detailOverlay.classList.remove('show');
 }
 
@@ -2072,7 +2116,7 @@ function renderDetail(card, sel){
   const entry = collection[card.id];
   detailImg.src = cardImgSrc(v.img); detailImg.style.display='';
   detailImg.onerror = () => { detailImg.style.display='none'; detailCard.style.background = rarityFallbackBg(v.rareza); };
-  detailCard.className = 'modal-card' + (v.rareza==='LR' ? ' is-LR' : '') + (entry.foil && v.rareza!=='LR' ? ' foil-effect' : '');
+  detailCard.className = 'modal-card tilt-card' + (v.rareza==='LR' ? ' is-LR' : '') + (entry.foil && v.rareza!=='LR' ? ' foil-effect' : '');
   detailTitle.textContent = '#' + card.id + ' · ' + v.nombre;
   detailSub.innerHTML = rarityBadgeSVG(v.rareza) + '<span>' + (v.alternativa ? 'Arte alternativo' : 'Arte estándar') + (entry.foil && v.rareza!=='LR' ? ' · Foil ✨' : '') + '</span>';
   tryAnimateDetail(v);
