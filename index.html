@@ -465,27 +465,35 @@
     display:flex; flex-direction:column; align-items:center; gap:6px; text-align:center;
   }
   .tl-img-wrap{ position:relative; }
-  .tl-card .tl-img-wrap{ width:100%; aspect-ratio: 426/568; border-radius:8px; overflow:hidden; }
+  .tl-card .tl-img-wrap{ width:100%; aspect-ratio: 426/568; border-radius:6px; overflow:hidden; }
   .tl-card .tl-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
   .tl-card .tl-rarity{ width:24px; height:24px; position:absolute; bottom:3px; left:3px; z-index:3; }
   .tl-card .tl-actions{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
   .tl-card .btn.small{ font-size:11px; padding:6px 10px; }
   .tl-empty-note{ font-size:12px; color:#8a80a8; padding:10px 0; grid-column: 1/-1; text-align:center; }
 
-  /* ---- Case de Top Loader: plástico rígido transparente, como uno real ---- */
+  /* ---- Top Loader: funda de plástico rígido transparente, como una real ----
+     Todo el "grosor" y la costura se logran con box-shadow inset (nunca se escapa de su caja,
+     a diferencia de un ::after posicionado, que ya nos dio problemas antes). */
   .nylon-wrap{
-    border:4px solid rgba(255,255,255,0.5) !important;
-    box-shadow: inset 0 0 14px rgba(255,255,255,0.18), inset 0 0 2px rgba(255,255,255,0.5), 0 3px 8px rgba(0,0,0,0.35);
-    background: rgba(255,255,255,0.06);
+    border: 7px solid rgba(255,255,255,0.55);
+    border-radius: 6px;
+    background: linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02) 40%, rgba(255,255,255,0.10) 100%);
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,0.75),          /* borde interno nítido, contra el canto de la carta */
+      inset 0 10px 16px -10px rgba(255,255,255,0.55),  /* brillo arriba: luz entrando por el plástico */
+      inset 0 -12px 18px -12px rgba(0,0,0,0.5),        /* sombra abajo: sugiere el grosor del plástico */
+      inset 0 7px 5px -6px rgba(0,0,0,0.35),           /* línea fina cerca del borde superior: la costura por donde se desliza la carta */
+      0 8px 16px rgba(0,0,0,0.45);                     /* sombra proyectada: la funda "flota" sobre el fondo */
   }
   .nylon-wrap::before{
     content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
-    background: linear-gradient(115deg, rgba(255,255,255,0.30) 0%, rgba(255,255,255,0.02) 26%,
-      rgba(255,255,255,0.20) 50%, rgba(255,255,255,0.02) 74%, rgba(255,255,255,0.24) 100%);
+    background: linear-gradient(115deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.02) 24%,
+      rgba(255,255,255,0.22) 48%, rgba(255,255,255,0.02) 72%, rgba(255,255,255,0.26) 100%);
     mix-blend-mode: overlay;
   }
 
-  /* ---- Case de Expositor: slab estilo grading, borde blanco con etiqueta de calidad ---- */
+  /* ---- Case de Expositor: slab estilo grading, plástico rígido blanco con etiqueta y ventana ---- */
   .grade-badge{
     display:inline-flex; align-items:center; justify-content:center; font-family:'Bungee'; font-size:12px;
     width:26px; height:26px; border-radius:50%; color:#1a1430; position:absolute; top:3px; left:3px;
@@ -500,26 +508,88 @@
     display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.5);
   }
   .card-slab{
-    position:relative; width:100%; height:100%; display:flex; flex-direction:column; gap:4px;
-    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(228,228,236,0.88));
-    border-radius:10px; padding:5px; box-shadow:0 6px 16px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(255,255,255,0.7);
+    position:relative; width:100%; height:100%; display:flex; flex-direction:column; gap:6px;
+    background: linear-gradient(180deg, #ffffff, #dadae4);
+    border-radius:12px; padding:8px;
+    box-shadow:
+      0 10px 22px rgba(0,0,0,0.45),               /* sombra proyectada: el case es rígido y tiene volumen */
+      inset 0 0 0 1px rgba(255,255,255,0.9),       /* canto nítido del plástico */
+      inset 0 3px 5px rgba(255,255,255,0.85),      /* brillo superior */
+      inset 0 -10px 16px -10px rgba(0,0,0,0.22);   /* sombra inferior, sugiere grosor */
   }
   .card-slab::after{
-    content:""; position:absolute; inset:0; border-radius:10px; pointer-events:none; z-index:3;
-    background: linear-gradient(115deg, rgba(255,255,255,0.55) 0%, transparent 26%, transparent 68%, rgba(255,255,255,0.32) 100%);
+    content:""; position:absolute; inset:0; border-radius:12px; pointer-events:none; z-index:3;
+    background: linear-gradient(115deg, rgba(255,255,255,0.6) 0%, transparent 22%, transparent 70%, rgba(255,255,255,0.35) 100%);
     mix-blend-mode: overlay;
   }
   .slab-label{
-    flex:0 0 auto; background:#efe9d8; border-radius:5px; display:flex; align-items:center; justify-content:center;
-    gap:4px; padding:3px 4px; font-family:'Bungee'; font-size:11px; color:#2b2013;
+    flex:0 0 auto; background: linear-gradient(180deg, #fbf8ef, #ece5d0); border-radius:6px;
+    display:flex; align-items:center; justify-content:center;
+    gap:4px; padding:4px 6px; font-family:'Bungee'; font-size:11px; color:#2b2013;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 5px rgba(0,0,0,0.22);
   }
   .slab-label .slab-grade{ font-weight:800; }
   .slab-label .slab-grade.grade-Z{ background:linear-gradient(135deg,#ff6a1a,#ff3d7f,#8659c9,#e3b23c); -webkit-background-clip:text; background-clip:text; color:transparent; }
   .slab-label .slab-grade.grade-A{ color:#7c4fd1; }
   .slab-label .slab-grade.grade-B{ color:#2f7fd1; }
   .slab-label .slab-grade.grade-C{ color:#5f6a73; }
-  .slab-window{ flex:1; border-radius:6px; overflow:hidden; background:#1a1430; position:relative; }
+  .slab-window{
+    flex:1; border-radius:6px; overflow:hidden; background:#1a1430; position:relative;
+    box-shadow:
+      inset 0 0 0 2px rgba(20,15,30,0.9),            /* marco oscuro, como el inserto plástico de una slab real */
+      inset 0 10px 14px -10px rgba(255,255,255,0.3); /* reflejo superior sobre el vidrio */
+  }
   .slab-window img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  /* ---- Case grande e interactivo, al inspeccionar una carta graduada ----
+     Mismo lenguaje visual que .card-slab (chico) pero con más detalle: remaches en las
+     esquinas, etiqueta con marca, ventana con marco más grueso y una franja inferior tipo
+     certificado. Usa la misma infraestructura de tilt 3D que el detalle de álbum. */
+  .card-slab-big{
+    position:relative; width:min(260px, 64vw); display:flex; flex-direction:column; gap:8px;
+    border-radius:16px; padding:14px;
+    background:
+      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) 13px 13px/7px 7px no-repeat,
+      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) calc(100% - 13px) 13px/7px 7px no-repeat,
+      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) 13px calc(100% - 13px)/7px 7px no-repeat,
+      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) calc(100% - 13px) calc(100% - 13px)/7px 7px no-repeat,
+      linear-gradient(165deg, #ffffff 0%, #e2e2ec 45%, #cfcfdb 100%);
+    box-shadow:
+      0 24px 50px rgba(0,0,0,0.55),
+      inset 0 0 0 1px rgba(255,255,255,0.9),
+      inset 0 4px 6px rgba(255,255,255,0.9),
+      inset 0 -14px 22px -14px rgba(0,0,0,0.28);
+  }
+  .card-slab-big::after{
+    content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none; z-index:4;
+    background: linear-gradient(115deg, rgba(255,255,255,0.55) 0%, transparent 20%, transparent 75%, rgba(255,255,255,0.3) 100%);
+    mix-blend-mode: overlay;
+  }
+  .slab-big-label{
+    position:relative; z-index:2; background: linear-gradient(180deg, #fefcf5, #ece5d0);
+    border-radius:8px; padding:7px 9px; display:flex; align-items:center; justify-content:space-between; gap:8px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 6px rgba(0,0,0,0.25);
+  }
+  .slab-big-brand{ font-family:'Bungee'; font-size:9px; letter-spacing:0.6px; color:#7c6a3f; }
+  .slab-big-gradebox{
+    flex:0 0 auto; width:38px; height:38px; border-radius:8px; background:#fff;
+    display:flex; align-items:center; justify-content:center; font-size:20px;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.18);
+  }
+  .slab-big-id{ font-family:'Nunito'; font-weight:800; font-size:10px; color:#6a5d3f; text-align:right; }
+  .slab-big-window{
+    position:relative; z-index:2; border-radius:10px; overflow:hidden; background:#1a1430;
+    aspect-ratio: var(--card-ratio);
+    box-shadow: inset 0 0 0 3px rgba(20,15,30,0.9), inset 0 14px 20px -14px rgba(255,255,255,0.35);
+  }
+  .slab-big-window img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .slab-big-footer{
+    position:relative; z-index:2; font-family:'Nunito'; font-weight:800; font-size:11px; color:#6a5d3f;
+    text-align:center; background: linear-gradient(180deg, #fbf8ef, #ece5d0); border-radius:8px; padding:6px 8px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 5px rgba(0,0,0,0.18);
+  }
+  .card-slab.slab-clickable{ cursor:pointer; transition: transform .15s ease; }
+  .card-slab.slab-clickable:hover{ transform: scale(1.035); }
 
   .expo-showcase{
     display:grid; grid-template-columns: repeat(auto-fill, minmax(120px,1fr)); gap:10px; margin-bottom:6px;
@@ -706,7 +776,7 @@
       </div>
       <div class="shop-item">
         <div class="icon-wrap icon-wrap-tall">
-          <div class="tl-img-wrap nylon-wrap" style="width:100%;height:100%;border-radius:8px;">
+          <div class="tl-img-wrap nylon-wrap" style="width:100%;height:100%;">
             <div class="mini-card-fill"></div>
           </div>
         </div>
@@ -884,6 +954,26 @@
     <div class="modal-card" id="gradeRevealCard"><img id="gradeRevealImg" alt=""></div>
     <div class="grade-badge-big" id="gradeRevealBadge"></div>
     <button class="btn" id="gradeRevealOk">Continuar</button>
+  </div>
+</div>
+
+<div class="overlay" id="gradedDetailOverlay">
+  <button class="close-x" id="gradedDetailClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="card-slab-big tilt-card" id="gradedDetailSlab">
+      <div class="slab-big-label">
+        <div class="slab-big-brand">DBZ · GRADING</div>
+        <div class="slab-big-gradebox"><span class="slab-grade" id="gradedDetailGradeLetter"></span></div>
+        <div class="slab-big-id" id="gradedDetailCardNum"></div>
+      </div>
+      <div class="slab-big-window">
+        <img id="gradedDetailImg" alt="">
+      </div>
+      <div class="slab-big-footer" id="gradedDetailFooter"></div>
+      <div class="card-glare" id="gradedDetailGlare"></div>
+    </div>
+    <div class="modal-title" id="gradedDetailTitle"></div>
+    <div class="modal-sub" id="gradedDetailSub"></div>
   </div>
 </div>
 
@@ -1267,7 +1357,8 @@ function tlHelperImg(cardId, rareza, alternativa){
   return v ? cardImgSrc(v.img) : '';
 }
 function buildSlabEl(g){
-  const slab = document.createElement('div'); slab.className = 'card-slab';
+  const slab = document.createElement('div'); slab.className = 'card-slab slab-clickable';
+  slab.addEventListener('click', () => openGradedDetail(g));
   const label = document.createElement('div'); label.className = 'slab-label';
   label.innerHTML = 'GRADO <span class="slab-grade grade-' + g.grade + '">' + g.grade + '</span>';
   slab.appendChild(label);
@@ -2072,38 +2163,73 @@ function tryAnimateDetail(v){
   });
 }
 /* ============ TILT 3D al inspeccionar (estilo Steam trading cards) ============
-   Solo en #detailCard. Sigue el mouse/dedo con rotación 3D + un "levante" hacia el
-   visor (scale) + un brillo que se mueve con el puntero. Puramente cosmético: no
-   toca nada de LWF, foil ni la lógica del juego. */
-const detailGlare = document.getElementById('detailGlare');
+   Reutilizable: se lo enganchamos tanto a la carta de detalle del álbum como al case
+   grande de una carta graduada. Sigue el mouse/dedo con rotación 3D + un "levante" hacia
+   el visor (scale) + un brillo que se mueve con el puntero. Puramente cosmético: no toca
+   nada de LWF, foil ni la lógica del juego. */
 const TILT_MAX_DEG = 16;
 const TILT_LIFT_SCALE = 1.07;
-function tiltMove(clientX, clientY){
-  const rect = detailCard.getBoundingClientRect();
-  const px = (clientX - rect.left) / rect.width;   // 0..1
-  const py = (clientY - rect.top) / rect.height;   // 0..1
-  const rotY = (Math.min(1, Math.max(0, px)) - 0.5) * TILT_MAX_DEG * 2;
-  const rotX = (0.5 - Math.min(1, Math.max(0, py))) * TILT_MAX_DEG * 2;
-  detailCard.style.transform = 'perspective(900px) rotateX(' + rotX.toFixed(2) + 'deg) rotateY(' + rotY.toFixed(2) + 'deg) scale3d(' + TILT_LIFT_SCALE + ',' + TILT_LIFT_SCALE + ',' + TILT_LIFT_SCALE + ')';
-  detailGlare.style.setProperty('--px', (px * 100).toFixed(1) + '%');
-  detailGlare.style.setProperty('--py', (py * 100).toFixed(1) + '%');
+function attachTilt(cardEl, glareEl){
+  function move(clientX, clientY){
+    const rect = cardEl.getBoundingClientRect();
+    const px = (clientX - rect.left) / rect.width;   // 0..1
+    const py = (clientY - rect.top) / rect.height;   // 0..1
+    const rotY = (Math.min(1, Math.max(0, px)) - 0.5) * TILT_MAX_DEG * 2;
+    const rotX = (0.5 - Math.min(1, Math.max(0, py))) * TILT_MAX_DEG * 2;
+    cardEl.style.transform = 'perspective(900px) rotateX(' + rotX.toFixed(2) + 'deg) rotateY(' + rotY.toFixed(2) + 'deg) scale3d(' + TILT_LIFT_SCALE + ',' + TILT_LIFT_SCALE + ',' + TILT_LIFT_SCALE + ')';
+    if(glareEl){
+      glareEl.style.setProperty('--px', (px * 100).toFixed(1) + '%');
+      glareEl.style.setProperty('--py', (py * 100).toFixed(1) + '%');
+    }
+  }
+  function reset(){
+    cardEl.classList.remove('tilting');
+    cardEl.style.transform = '';
+  }
+  cardEl.addEventListener('mouseenter', () => cardEl.classList.add('tilting'));
+  cardEl.addEventListener('mousemove', (e) => move(e.clientX, e.clientY));
+  cardEl.addEventListener('mouseleave', reset);
+  cardEl.addEventListener('touchstart', () => cardEl.classList.add('tilting'), { passive:true });
+  cardEl.addEventListener('touchmove', (e) => { const t = e.touches[0]; if(t) move(t.clientX, t.clientY); }, { passive:true });
+  cardEl.addEventListener('touchend', reset);
+  return reset;
 }
-function tiltReset(){
-  detailCard.classList.remove('tilting');
-  detailCard.style.transform = '';
-}
-detailCard.addEventListener('mouseenter', () => detailCard.classList.add('tilting'));
-detailCard.addEventListener('mousemove', (e) => tiltMove(e.clientX, e.clientY));
-detailCard.addEventListener('mouseleave', tiltReset);
-detailCard.addEventListener('touchstart', () => detailCard.classList.add('tilting'), { passive:true });
-detailCard.addEventListener('touchmove', (e) => { const t = e.touches[0]; if(t) tiltMove(t.clientX, t.clientY); }, { passive:true });
-detailCard.addEventListener('touchend', tiltReset);
+const resetDetailTilt = attachTilt(detailCard, document.getElementById('detailGlare'));
 
 function closeDetailOverlay(){
   stopDetailAnim();
-  tiltReset();
+  resetDetailTilt();
   detailOverlay.classList.remove('show');
 }
+
+/* ============ DETALLE GRANDE DE CARTA GRADUADA ============ */
+const gradedDetailOverlay = document.getElementById('gradedDetailOverlay');
+const gradedDetailSlab = document.getElementById('gradedDetailSlab');
+const resetGradedTilt = attachTilt(gradedDetailSlab, document.getElementById('gradedDetailGlare'));
+function closeGradedDetailOverlay(){
+  resetGradedTilt();
+  gradedDetailOverlay.classList.remove('show');
+}
+function openGradedDetail(g){
+  const card = CARDS.find(c => c.id === g.cardId);
+  const v = card ? findVariant(card, g.rareza, g.alternativa) : null;
+  const nombre = v ? v.nombre : ('#' + g.cardId);
+  const img = document.getElementById('gradedDetailImg');
+  img.src = tlHelperImg(g.cardId, g.rareza, g.alternativa);
+  img.style.display = '';
+  img.onerror = function(){ this.style.display = 'none'; };
+  const gradeLetterEl = document.getElementById('gradedDetailGradeLetter');
+  gradeLetterEl.textContent = g.grade;
+  gradeLetterEl.className = 'slab-grade grade-' + g.grade;
+  document.getElementById('gradedDetailCardNum').textContent = '#' + g.cardId;
+  document.getElementById('gradedDetailFooter').textContent = nombre + (g.foil ? ' · Foil ✨' : '');
+  document.getElementById('gradedDetailTitle').textContent = nombre;
+  document.getElementById('gradedDetailSub').innerHTML = (v ? rarityBadgeSVG(v.rareza) : '') +
+    '<span>Calidad ' + g.grade + ' · vale ' + gradedSellValue(g.rareza, g.grade) + ' monedas</span>';
+  document.querySelector('#gradedDetailSlab .slab-big-window').classList.toggle('foil-effect', !!g.foil);
+  gradedDetailOverlay.classList.add('show');
+}
+document.getElementById('gradedDetailClose').addEventListener('click', closeGradedDetailOverlay);
 
 function openDetail(card){
   const entry = collection[card.id];
