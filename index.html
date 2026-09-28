@@ -304,8 +304,8 @@
   }
   .modal-card img{ width:100%; height:100%; object-fit:cover; display:block; }
   .modal-card-canvas{ width:100%; height:100%; display:none; }
-  .modal-card.lwf-active img{ display:none; }
-  .modal-card.lwf-active .modal-card-canvas{ display:block; }
+  .modal-card.lwf-active img, .slab-big-window.lwf-active img{ display:none; }
+  .modal-card.lwf-active .modal-card-canvas, .slab-big-window.lwf-active .modal-card-canvas{ display:block; }
   .modal-wrap{ display:flex; flex-direction:column; align-items:center; gap:14px; max-width:640px; margin:auto; }
   .modal-card.reveal{ animation: flipin 0.55s ease backwards; }
   @keyframes flipin{
@@ -503,23 +503,21 @@
   .grade-A{ background:#8659c9; color:#fff; }
   .grade-B{ background:#3e8fb0; color:#fff; }
   .grade-C{ background:#7c8a99; color:#fff; }
-  .grade-badge-big{
-    font-family:'Bungee'; font-size:34px; width:74px; height:74px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; color:#fff; box-shadow:0 8px 20px rgba(0,0,0,0.5);
-  }
   .card-slab{
     position:relative; width:100%; height:100%; display:flex; flex-direction:column; gap:6px;
-    background: linear-gradient(180deg, #ffffff, #dadae4);
+    background: linear-gradient(165deg, rgba(255,255,255,0.20), rgba(255,255,255,0.03) 45%, rgba(255,255,255,0.14) 100%);
+    border: 1px solid rgba(255,255,255,0.4);
     border-radius:12px; padding:8px;
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
     box-shadow:
-      0 10px 22px rgba(0,0,0,0.45),               /* sombra proyectada: el case es rígido y tiene volumen */
-      inset 0 0 0 1px rgba(255,255,255,0.9),       /* canto nítido del plástico */
-      inset 0 3px 5px rgba(255,255,255,0.85),      /* brillo superior */
-      inset 0 -10px 16px -10px rgba(0,0,0,0.22);   /* sombra inferior, sugiere grosor */
+      0 10px 22px rgba(0,0,0,0.5),                 /* sombra proyectada: el case es rígido y tiene volumen */
+      inset 0 0 0 1px rgba(255,255,255,0.55),       /* canto nítido del acrílico */
+      inset 0 3px 6px rgba(255,255,255,0.4),        /* brillo superior */
+      inset 0 -10px 16px -10px rgba(0,0,0,0.35);    /* sombra inferior, sugiere grosor */
   }
   .card-slab::after{
     content:""; position:absolute; inset:0; border-radius:12px; pointer-events:none; z-index:3;
-    background: linear-gradient(115deg, rgba(255,255,255,0.6) 0%, transparent 22%, transparent 70%, rgba(255,255,255,0.35) 100%);
+    background: linear-gradient(115deg, rgba(255,255,255,0.65) 0%, transparent 20%, transparent 68%, rgba(255,255,255,0.4) 100%);
     mix-blend-mode: overlay;
   }
   .slab-label{
@@ -542,27 +540,30 @@
   .slab-window img{ width:100%; height:100%; object-fit:cover; display:block; }
 
   /* ---- Case grande e interactivo, al inspeccionar una carta graduada ----
-     Mismo lenguaje visual que .card-slab (chico) pero con más detalle: remaches en las
-     esquinas, etiqueta con marca, ventana con marco más grueso y una franja inferior tipo
-     certificado. Usa la misma infraestructura de tilt 3D que el detalle de álbum. */
+     Acrílico transparente con reflejos (el plástico deja ver a través, como una slab real;
+     la etiqueta y el pie siguen opacos, como el sticker impreso que llevan las de verdad).
+     Remaches en las esquinas, ventana con marco grueso. Usa la misma infraestructura de
+     tilt 3D que el detalle de álbum, y puede animar la LR adentro con LWF. */
   .card-slab-big{
     position:relative; width:min(260px, 64vw); display:flex; flex-direction:column; gap:8px;
     border-radius:16px; padding:14px;
+    border: 1px solid rgba(255,255,255,0.45);
+    -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
     background:
-      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) 13px 13px/7px 7px no-repeat,
-      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) calc(100% - 13px) 13px/7px 7px no-repeat,
-      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) 13px calc(100% - 13px)/7px 7px no-repeat,
-      radial-gradient(circle, #fff 0%, #cfcfdb 60%, #aaaab8 100%) calc(100% - 13px) calc(100% - 13px)/7px 7px no-repeat,
-      linear-gradient(165deg, #ffffff 0%, #e2e2ec 45%, #cfcfdb 100%);
+      radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(200,200,215,0.55) 55%, rgba(150,150,165,0.55) 100%) 13px 13px/7px 7px no-repeat,
+      radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(200,200,215,0.55) 55%, rgba(150,150,165,0.55) 100%) calc(100% - 13px) 13px/7px 7px no-repeat,
+      radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(200,200,215,0.55) 55%, rgba(150,150,165,0.55) 100%) 13px calc(100% - 13px)/7px 7px no-repeat,
+      radial-gradient(circle, rgba(255,255,255,0.55) 0%, rgba(200,200,215,0.55) 55%, rgba(150,150,165,0.55) 100%) calc(100% - 13px) calc(100% - 13px)/7px 7px no-repeat,
+      linear-gradient(165deg, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0.02) 45%, rgba(255,255,255,0.14) 100%);
     box-shadow:
       0 24px 50px rgba(0,0,0,0.55),
-      inset 0 0 0 1px rgba(255,255,255,0.9),
-      inset 0 4px 6px rgba(255,255,255,0.9),
-      inset 0 -14px 22px -14px rgba(0,0,0,0.28);
+      inset 0 0 0 1px rgba(255,255,255,0.55),
+      inset 0 4px 8px rgba(255,255,255,0.4),
+      inset 0 -16px 26px -16px rgba(0,0,0,0.45);
   }
   .card-slab-big::after{
     content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none; z-index:4;
-    background: linear-gradient(115deg, rgba(255,255,255,0.55) 0%, transparent 20%, transparent 75%, rgba(255,255,255,0.3) 100%);
+    background: linear-gradient(115deg, rgba(255,255,255,0.6) 0%, transparent 18%, transparent 76%, rgba(255,255,255,0.35) 100%);
     mix-blend-mode: overlay;
   }
   .slab-big-label{
@@ -588,6 +589,26 @@
     text-align:center; background: linear-gradient(180deg, #fbf8ef, #ece5d0); border-radius:8px; padding:6px 8px;
     box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 2px 5px rgba(0,0,0,0.18);
   }
+
+  /* ---- Animación de graduación: la figurita "entra" al case antes de ver el resultado ---- */
+  @keyframes cardSlideIntoCase{
+    0%   { transform: translateY(-170%) rotate(-8deg); opacity: 0; }
+    55%  { transform: translateY(8%) rotate(2deg); opacity: 1; }
+    75%  { transform: translateY(-3%) rotate(-1deg); }
+    100% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  }
+  .grade-reveal-slide{ animation: cardSlideIntoCase .7s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes gradeSealFlash{
+    0%{ opacity:0; } 30%{ opacity:.9; } 100%{ opacity:0; }
+  }
+  #gradeRevealSlab.sealing .slab-big-window::before{
+    content:""; position:absolute; inset:0; z-index:5; background:#fff; pointer-events:none;
+    animation: gradeSealFlash .35s ease-out both;
+  }
+  @keyframes gradeBadgePop{
+    0%{ transform: scale(0.3); opacity:0; } 70%{ transform: scale(1.18); opacity:1; } 100%{ transform: scale(1); opacity:1; }
+  }
+  .grade-reveal-pop{ animation: gradeBadgePop .45s ease both; }
   .card-slab.slab-clickable{ cursor:pointer; transition: transform .15s ease; }
   .card-slab.slab-clickable:hover{ transform: scale(1.035); }
 
@@ -950,10 +971,19 @@
 <div class="overlay" id="gradeRevealOverlay">
   <button class="close-x" id="gradeRevealClose">&times;</button>
   <div class="modal-wrap">
-    <div class="modal-title">¡Calidad revelada!</div>
-    <div class="modal-card" id="gradeRevealCard"><img id="gradeRevealImg" alt=""></div>
-    <div class="grade-badge-big" id="gradeRevealBadge"></div>
-    <button class="btn" id="gradeRevealOk">Continuar</button>
+    <div class="modal-title" id="gradeRevealTitle">Metiendo la figurita en el case…</div>
+    <div class="card-slab-big" id="gradeRevealSlab">
+      <div class="slab-big-label">
+        <div class="slab-big-brand">DBZ · GRADING</div>
+        <div class="slab-big-gradebox"><span class="slab-grade" id="gradeRevealGradeLetter">?</span></div>
+        <div class="slab-big-id" id="gradeRevealCardNum"></div>
+      </div>
+      <div class="slab-big-window">
+        <img id="gradeRevealImg" alt="">
+      </div>
+      <div class="slab-big-footer" id="gradeRevealFooter">Sellando…</div>
+    </div>
+    <button class="btn" id="gradeRevealOk" style="display:none;">Continuar</button>
   </div>
 </div>
 
@@ -968,6 +998,7 @@
       </div>
       <div class="slab-big-window">
         <img id="gradedDetailImg" alt="">
+        <canvas id="gradedDetailAnimCanvas" class="modal-card-canvas" width="426" height="568"></canvas>
       </div>
       <div class="slab-big-footer" id="gradedDetailFooter"></div>
       <div class="card-glare" id="gradedDetailGlare"></div>
@@ -1457,10 +1488,35 @@ function showGradeReveal(graded){
   const img = document.getElementById('gradeRevealImg');
   img.src = tlHelperImg(graded.cardId, graded.rareza, graded.alternativa);
   img.style.display = '';
-  img.onerror = () => { img.style.display='none'; document.getElementById('gradeRevealCard').style.background = rarityFallbackBg(graded.rareza); };
-  document.getElementById('gradeRevealBadge').className = 'grade-badge-big grade-' + graded.grade;
-  document.getElementById('gradeRevealBadge').textContent = graded.grade;
+  img.onerror = () => { img.style.display='none'; };
+  // reinicia la animación de deslizamiento por si se gradúa más de una vez seguida
+  img.classList.remove('grade-reveal-slide');
+  void img.offsetWidth;
+  img.classList.add('grade-reveal-slide');
+
+  const slab = document.getElementById('gradeRevealSlab');
+  const gradeLetterEl = document.getElementById('gradeRevealGradeLetter');
+  gradeLetterEl.textContent = '?';
+  gradeLetterEl.className = 'slab-grade';
+  document.getElementById('gradeRevealCardNum').textContent = '#' + graded.cardId;
+  document.getElementById('gradeRevealFooter').textContent = 'Sellando…';
+  document.getElementById('gradeRevealTitle').textContent = 'Metiendo la figurita en el case…';
+  document.getElementById('gradeRevealOk').style.display = 'none';
+  slab.classList.remove('sealing');
   document.getElementById('gradeRevealOverlay').classList.add('show');
+  playGradeSound();
+
+  // Deja ver la carta deslizándose adentro un momento, "sella" el case con un flash,
+  // y recién ahí revela la calidad — antes de esto no se sabe qué grado tocó.
+  setTimeout(() => {
+    void slab.offsetWidth;
+    slab.classList.add('sealing');
+    gradeLetterEl.textContent = graded.grade;
+    gradeLetterEl.className = 'slab-grade grade-' + graded.grade + ' grade-reveal-pop';
+    document.getElementById('gradeRevealFooter').textContent = '¡Calidad certificada!';
+    document.getElementById('gradeRevealTitle').textContent = '¡Calidad revelada!';
+    document.getElementById('gradeRevealOk').style.display = '';
+  }, 750);
 }
 
 /* ============ PERFIL: nick / bio / foto editables ============ */
@@ -1927,7 +1983,8 @@ document.querySelectorAll('.pack-art, .pack-big img').forEach(el => {
 /* Los agrega el usuario con estos nombres exactos (si usás otra extensión, avisame y ajusto la ruta):
    sonidos/corte-papel.mp3    -> al abrir el sobre
    sonidos/desliz-carta.mp3   -> uno por cada figurita que se revela
-   sonidos/pegado-figurita.mp3 -> al pegar una figurita en el álbum */
+   sonidos/pegado-figurita.mp3 -> al pegar una figurita en el álbum
+   sonidos/carta-en-case.mp3   -> al graduar una figurita, cuando entra al case (la agrega el usuario) */
 function playSound(path, volume){
   try{
     const audio = new Audio(path);
@@ -1939,6 +1996,7 @@ function playCutSound(){ playSound('sonidos/corte-papel.mp3', 0.7); }
 function playSlideSound(){ playSound('sonidos/desliz-carta.mp3', 0.6); }
 function playPasteSound(){ playSound('sonidos/pegado-figurita.mp3', 0.7); }
 function playAchievementSound(){ playSound('sonidos/logro-desbloqueado.mp3', 0.7); }
+function playGradeSound(){ playSound('sonidos/carta-en-case.mp3', 0.7); }
 
 /* ---- Ver el sobre a tamaño completo, elegir cuál (si hay más de un tipo) y tocarlo para abrirlo ---- */
 const packOpenOverlay = document.getElementById('packOpenOverlay');
@@ -2139,29 +2197,34 @@ const variantSwitch = document.getElementById('variantSwitch');
    dokkaninfo.com usa también para el .lwf), así que no hace falta cargar un mapeo aparte: con
    solo poner la carpeta assets/<id>/ correspondiente, esa LR se anima sola. */
 const LWF_ANIM_ENABLED = location.protocol !== 'file:' && typeof LWF !== 'undefined' && typeof CardAnim !== 'undefined';
-const detailAnimCanvas = document.getElementById('detailAnimCanvas');
-let detailAnimInst = null;
 function assetIdFromImgUrl(url){
   const m = (url || '').match(/\/character\/card\/(\d+)\//);
   return m ? m[1] : null;
 }
-function stopDetailAnim(){
-  if(detailAnimInst){ detailAnimInst.destroy(); detailAnimInst = null; }
-  detailCard.classList.remove('lwf-active');
+/* Fábrica reutilizable: un "animador" independiente por cada lugar donde se puede ver una
+   carta en grande (detalle de álbum, case grande de graduada), cada uno con su propio canvas. */
+function makeLwfAnimator(hostEl, canvasEl){
+  let inst = null;
+  function stop(){
+    if(inst){ inst.destroy(); inst = null; }
+    hostEl.classList.remove('lwf-active');
+  }
+  function tryAnimate(v){
+    stop(); // corta cualquier animación anterior antes de intentar la nueva
+    if(!LWF_ANIM_ENABLED || v.rareza !== 'LR') return;
+    const assetId = assetIdFromImgUrl(v.img);
+    if(!assetId) return;
+    inst = CardAnim.mount(canvasEl, assetId, {
+      onload: () => { hostEl.classList.add('lwf-active'); },
+      onerror: (url) => {
+        console.warn('[LWF] No se pudo animar assetId=' + assetId + ' (' + url + '). Se queda con la imagen fija.');
+        stop();
+      }
+    });
+  }
+  return { tryAnimate, stop };
 }
-function tryAnimateDetail(v){
-  stopDetailAnim(); // corta cualquier animación anterior antes de intentar la nueva
-  if(!LWF_ANIM_ENABLED || v.rareza !== 'LR') return;
-  const assetId = assetIdFromImgUrl(v.img);
-  if(!assetId) return;
-  detailAnimInst = CardAnim.mount(detailAnimCanvas, assetId, {
-    onload: () => { detailCard.classList.add('lwf-active'); },
-    onerror: (url) => {
-      console.warn('[LWF] No se pudo animar assetId=' + assetId + ' (' + url + '). Se queda con la imagen fija.');
-      stopDetailAnim();
-    }
-  });
-}
+const detailAnimator = makeLwfAnimator(detailCard, document.getElementById('detailAnimCanvas'));
 /* ============ TILT 3D al inspeccionar (estilo Steam trading cards) ============
    Reutilizable: se lo enganchamos tanto a la carta de detalle del álbum como al case
    grande de una carta graduada. Sigue el mouse/dedo con rotación 3D + un "levante" hacia
@@ -2197,7 +2260,7 @@ function attachTilt(cardEl, glareEl){
 const resetDetailTilt = attachTilt(detailCard, document.getElementById('detailGlare'));
 
 function closeDetailOverlay(){
-  stopDetailAnim();
+  detailAnimator.stop();
   resetDetailTilt();
   detailOverlay.classList.remove('show');
 }
@@ -2206,8 +2269,10 @@ function closeDetailOverlay(){
 const gradedDetailOverlay = document.getElementById('gradedDetailOverlay');
 const gradedDetailSlab = document.getElementById('gradedDetailSlab');
 const resetGradedTilt = attachTilt(gradedDetailSlab, document.getElementById('gradedDetailGlare'));
+const gradedAnimator = makeLwfAnimator(document.querySelector('#gradedDetailSlab .slab-big-window'), document.getElementById('gradedDetailAnimCanvas'));
 function closeGradedDetailOverlay(){
   resetGradedTilt();
+  gradedAnimator.stop();
   gradedDetailOverlay.classList.remove('show');
 }
 function openGradedDetail(g){
@@ -2227,6 +2292,7 @@ function openGradedDetail(g){
   document.getElementById('gradedDetailSub').innerHTML = (v ? rarityBadgeSVG(v.rareza) : '') +
     '<span>Calidad ' + g.grade + ' · vale ' + gradedSellValue(g.rareza, g.grade) + ' monedas</span>';
   document.querySelector('#gradedDetailSlab .slab-big-window').classList.toggle('foil-effect', !!g.foil);
+  if(v) gradedAnimator.tryAnimate(v); else gradedAnimator.stop();
   gradedDetailOverlay.classList.add('show');
 }
 document.getElementById('gradedDetailClose').addEventListener('click', closeGradedDetailOverlay);
@@ -2245,7 +2311,7 @@ function renderDetail(card, sel){
   detailCard.className = 'modal-card tilt-card' + (v.rareza==='LR' ? ' is-LR' : '') + (entry.foil && v.rareza!=='LR' ? ' foil-effect' : '');
   detailTitle.textContent = '#' + card.id + ' · ' + v.nombre;
   detailSub.innerHTML = rarityBadgeSVG(v.rareza) + '<span>' + (v.alternativa ? 'Arte alternativo' : 'Arte estándar') + (entry.foil && v.rareza!=='LR' ? ' · Foil ✨' : '') + '</span>';
-  tryAnimateDetail(v);
+  detailAnimator.tryAnimate(v);
 
   variantSwitch.innerHTML = '';
   if(entry.owned.length > 1){
