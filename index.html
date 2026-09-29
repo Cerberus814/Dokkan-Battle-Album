@@ -292,6 +292,21 @@
     100% { background-position: 100% 100%, 100% 100%; opacity: 0; }
   }
 
+  /* ---------- Firma de Akira Toriyama (rarísima, independiente de la rareza de la carta) ----------
+     La imagen ya viene del mismo tamaño que el arte de las cartas, así que solo se superpone
+     100%/100% encima, sea cual sea el contenedor (casilla del álbum, detalle, funda, slab). */
+  .signature-overlay{
+    position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    pointer-events:none; z-index:5;
+  }
+  .signed-card{
+    box-shadow: 0 0 22px 5px rgba(255,215,80,0.7), 0 0 46px 12px rgba(255,255,255,0.28) !important;
+  }
+  .signed-tag{
+    background: linear-gradient(90deg, #2b2013, #4a3a1c); color:#ffd76a; font-weight:800;
+    border: 1px solid rgba(255,215,100,0.6);
+  }
+
   /* ---------- Modal (reveal + detail) ---------- */
   .overlay{
     position:fixed; inset:0; background:rgba(10,7,18,0.86); display:none;
@@ -467,31 +482,80 @@
   .tl-img-wrap{ position:relative; }
   .tl-card .tl-img-wrap{ width:100%; aspect-ratio: 426/568; border-radius:6px; overflow:hidden; }
   .tl-card .tl-img-wrap img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .tl-card .tl-rarity{ width:24px; height:24px; position:absolute; bottom:3px; left:3px; z-index:3; }
   .tl-card .tl-actions{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; margin-top:4px; }
   .tl-card .btn.small{ font-size:11px; padding:6px 10px; }
   .tl-empty-note{ font-size:12px; color:#8a80a8; padding:10px 0; grid-column: 1/-1; text-align:center; }
 
-  /* ---- Top Loader: funda de plástico rígido transparente, como una real ----
-     Todo el "grosor" y la costura se logran con box-shadow inset (nunca se escapa de su caja,
-     a diferencia de un ::after posicionado, que ya nos dio problemas antes). */
-  .nylon-wrap{
-    border: 7px solid rgba(255,255,255,0.55);
-    border-radius: 6px;
-    background: linear-gradient(155deg, rgba(255,255,255,0.14), rgba(255,255,255,0.02) 40%, rgba(255,255,255,0.10) 100%);
+  /* ---- Top Loader: funda rígida transparente, boca abierta arriba ----
+     La misma estructura se usa en el inventario (chica, ocupa el ancho de su casilla), en la
+     vista grande interactiva y en las animaciones de guardar/sacar la carta. Todo en porcentajes,
+     así escala sola. Capas: placa trasera (el propio .toploader) -> carta (.tlb-card) -> borde de
+     la bolsa (::before), reflejos diagonales (::after), costura de la boca (.tlb-slit) y destello
+     de "sellado" (.tlb-sweep) por delante. */
+  .toploader{
+    position:relative; width:100%; aspect-ratio: 1 / 1.293; border-radius:5px;
+    background: linear-gradient(160deg, rgba(255,255,255,0.30), rgba(255,255,255,0.10) 45%, rgba(255,255,255,0.24));
+    border:1px solid rgba(255,255,255,0.6);
+    -webkit-backdrop-filter: blur(1.5px); backdrop-filter: blur(1.5px);
     box-shadow:
-      inset 0 0 0 1px rgba(255,255,255,0.75),          /* borde interno nítido, contra el canto de la carta */
-      inset 0 10px 16px -10px rgba(255,255,255,0.55),  /* brillo arriba: luz entrando por el plástico */
-      inset 0 -12px 18px -12px rgba(0,0,0,0.5),        /* sombra abajo: sugiere el grosor del plástico */
-      inset 0 7px 5px -6px rgba(0,0,0,0.35),           /* línea fina cerca del borde superior: la costura por donde se desliza la carta */
-      0 8px 16px rgba(0,0,0,0.45);                     /* sombra proyectada: la funda "flota" sobre el fondo */
+      0 12px 24px rgba(0,0,0,0.5),
+      inset 0 0 0 1px rgba(255,255,255,0.25),
+      inset 0 0 14px rgba(170,215,255,0.28);   /* canto del plástico: leve tinte celeste, como el acrílico real */
   }
-  .nylon-wrap::before{
-    content:""; position:absolute; inset:0; z-index:2; pointer-events:none; border-radius:inherit;
-    background: linear-gradient(115deg, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.02) 24%,
-      rgba(255,255,255,0.22) 48%, rgba(255,255,255,0.02) 72%, rgba(255,255,255,0.26) 100%);
-    mix-blend-mode: overlay;
+  .toploader .tlb-card{
+    position:absolute; z-index:1; left:6%; top:5.8%; width:88%; aspect-ratio: 426 / 568;
+    border-radius:3px; overflow:hidden; background:#1a1430; box-shadow: 0 1px 4px rgba(0,0,0,0.5);
   }
+  .toploader .tlb-card img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .tlb-card.lwf-active img{ display:none; }
+  .tlb-card.lwf-active .modal-card-canvas{ display:block; }
+  .toploader::before{           /* borde de la "bolsa" donde entra la carta */
+    content:""; position:absolute; z-index:3; pointer-events:none;
+    left:6%; top:5.8%; width:88%; aspect-ratio: 426 / 568;
+    border:1px solid rgba(255,255,255,0.7); border-radius:3px;
+    box-shadow: 0 0 5px rgba(255,255,255,0.35), inset 0 0 6px rgba(255,255,255,0.25);
+  }
+  .toploader::after{            /* cara delantera: reflejos diagonales sobre todo el plástico */
+    content:""; position:absolute; inset:0; z-index:3; pointer-events:none; border-radius:inherit;
+    background:
+      linear-gradient(115deg, transparent 16%, rgba(255,255,255,0.30) 23%, rgba(255,255,255,0.06) 32%, transparent 38%),
+      linear-gradient(115deg, transparent 57%, rgba(255,255,255,0.42) 59%, transparent 61.5%),
+      linear-gradient(115deg, transparent 68%, rgba(255,255,255,0.17) 75%, transparent 86%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), inset 1px 0 0 rgba(255,255,255,0.45);
+  }
+  .toploader .tlb-slit{         /* la rendija por donde se desliza la carta */
+    position:absolute; z-index:3; pointer-events:none; left:2.5%; right:2.5%; top:3.3%; height:3px; border-radius:2px;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.4) 1px, rgba(255,255,255,0.7) 1px, rgba(255,255,255,0.7) 2px, transparent 2px);
+  }
+  .toploader .tlb-sweep{ position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; z-index:4; }
+  .toploader .tlb-sweep i{
+    position:absolute; top:-20%; bottom:-20%; left:-45%; width:32%; opacity:0; transform: skewX(-18deg);
+    background: linear-gradient(100deg, transparent, rgba(255,255,255,0.7), transparent);
+  }
+  .toploader.sealed .tlb-sweep i{ animation: tlbSweep .8s ease-out both; }
+  @keyframes tlbSweep{ 0%{ left:-45%; opacity:0; } 15%{ opacity:1; } 100%{ left:125%; opacity:0; } }
+  .toploader .tlb-badge{ position:absolute; z-index:5; left:8.5%; bottom:5.2%; width:22px; height:22px; pointer-events:none; }
+  .toploader .tlb-badge svg{ width:100%; height:100%; }
+  .toploader.tl-clickable{ cursor:pointer; transition: transform .15s ease; }
+  .toploader.tl-clickable:hover{ transform: translateY(-3px) scale(1.02); }
+  .toploader.toploader-big{ width:min(270px, 66vw); box-shadow: 0 24px 48px rgba(0,0,0,0.55), inset 0 0 0 1px rgba(255,255,255,0.25), inset 0 0 18px rgba(170,215,255,0.3); }
+
+  /* Animaciones: la carta entra por la boca de la funda / sale de ella */
+  @keyframes tlbInsert{
+    0%   { transform: translateY(-105%) scale(1.06) rotate(-3deg); opacity:0; }
+    15%  { opacity:1; }
+    72%  { transform: translateY(3%) scale(1) rotate(0.5deg); }      /* pequeño sobre-recorrido: se asienta */
+    100% { transform: translateY(0) scale(1) rotate(0); opacity:1; }
+  }
+  .tlb-card.tlb-inserting{ animation: tlbInsert .9s cubic-bezier(.3,.7,.25,1) both; }
+  @keyframes tlbRemove{
+    0%   { transform: translateY(0) scale(1); opacity:1; }
+    20%  { transform: translateY(3%) scale(1); }                     /* toma un poco de impulso hacia abajo */
+    100% { transform: translateY(-110%) scale(1.08) rotate(4deg); opacity:0; }
+  }
+  .tlb-card.tlb-removing{ animation: tlbRemove .8s cubic-bezier(.5,0,.6,1) both; }
+  .toploader-stage{ display:flex; justify-content:center; padding-top:6px; }
+  .tl-detail-actions{ display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:2px; }
 
   /* ---- Case de Expositor: slab estilo grading, plástico rígido blanco con etiqueta y ventana ---- */
   .grade-badge{
@@ -797,8 +861,9 @@
       </div>
       <div class="shop-item">
         <div class="icon-wrap icon-wrap-tall">
-          <div class="tl-img-wrap nylon-wrap" style="width:100%;height:100%;">
-            <div class="mini-card-fill"></div>
+          <div class="toploader">
+            <div class="tlb-card"><div class="mini-card-fill"></div></div>
+            <div class="tlb-slit"></div>
           </div>
         </div>
         <h4>Top Loader</h4>
@@ -987,6 +1052,16 @@
   </div>
 </div>
 
+<div class="overlay" id="toploaderOverlay">
+  <button class="close-x" id="toploaderClose">&times;</button>
+  <div class="modal-wrap">
+    <div class="toploader-stage" id="toploaderStage"></div>
+    <div class="modal-title" id="toploaderTitle"></div>
+    <div class="modal-sub" id="toploaderSub"></div>
+    <div class="tl-detail-actions" id="toploaderActions"></div>
+  </div>
+</div>
+
 <div class="overlay" id="gradedDetailOverlay">
   <button class="close-x" id="gradedDetailClose">&times;</button>
   <div class="modal-wrap">
@@ -1048,6 +1123,12 @@ const UR_PLUS_FLOOR_CHANCE = 0.35; // piso del sobre exclusivo
 
 const RARITY_COLORS = { N:'var(--n-color)', R:'var(--r-color)', SR:'var(--sr-color)', SSR:'var(--ssr-color)', UR:'var(--ur-color)', LR:null };
 const COIN_VALUE = { N:3, R:5, SR:12, SSR:30, UR:80, LR:200 };
+/* Firma de Akira Toriyama: puede aparecer en CUALQUIER carta, sin importar la rareza.
+   Muy baja probabilidad, y vale más que una LR (incluso sobre una N) tanto al convertirse
+   en monedas como al graduarla. */
+const SIGNED_SIGNATURE_CHANCE = 0.002; // ~0.2% por figurita revelada
+const SIGNED_COIN_VALUE = 500;         // > COIN_VALUE.LR (200)
+const SIGNED_EXPOSITOR_BASE_VALUE = 3000; // > EXPOSITOR_BASE_VALUE.LR (1200)
 
 const SHOP_PACK_COST = 150;
 const SHOP_PACK10_COST = 260;
@@ -1388,7 +1469,7 @@ function tlHelperImg(cardId, rareza, alternativa){
   return v ? cardImgSrc(v.img) : '';
 }
 function buildSlabEl(g){
-  const slab = document.createElement('div'); slab.className = 'card-slab slab-clickable';
+  const slab = document.createElement('div'); slab.className = 'card-slab slab-clickable' + (g.signed ? ' signed-card' : '');
   slab.addEventListener('click', () => openGradedDetail(g));
   const label = document.createElement('div'); label.className = 'slab-label';
   label.innerHTML = 'GRADO <span class="slab-grade grade-' + g.grade + '">' + g.grade + '</span>';
@@ -1399,6 +1480,7 @@ function buildSlabEl(g){
   img.src = tlHelperImg(g.cardId, g.rareza, g.alternativa);
   img.onerror = () => { img.style.display='none'; win.style.background = rarityFallbackBg(g.rareza); };
   win.appendChild(img);
+  if(g.signed) win.appendChild(buildSignatureImg());
   slab.appendChild(win);
   return slab;
 }
@@ -1414,17 +1496,10 @@ function renderToploaders(){
   }
   for(const tl of list){
     const card = document.createElement('div'); card.className = 'tl-card';
-    const wrap = document.createElement('div'); wrap.className = 'tl-img-wrap nylon-wrap';
-    if(tl.foil) wrap.classList.add('foil-effect');
-    const img = document.createElement('img');
-    img.src = tlHelperImg(tl.cardId, tl.rareza, tl.alternativa);
-    img.onerror = () => { img.style.display='none'; wrap.style.background = rarityFallbackBg(tl.rareza); };
-    wrap.appendChild(img);
-    const badge = document.createElement('div');
-    badge.innerHTML = rarityBadgeSVG(tl.rareza);
-    badge.className = 'tl-rarity'; badge.style.position='absolute'; badge.style.bottom='3px'; badge.style.left='3px';
-    wrap.appendChild(badge);
-    card.appendChild(wrap);
+    const parts = buildToploaderSleeve(tl, { badge:true });
+    parts.sleeve.title = 'Tocá para inspeccionarla';
+    parts.sleeve.addEventListener('click', () => openToploaderOverlay('view', tl));
+    card.appendChild(parts.sleeve);
     const label = document.createElement('div'); label.style.fontSize='11px'; label.style.color='#c9bfe0';
     label.textContent = '#' + tl.cardId;
     card.appendChild(label);
@@ -1471,7 +1546,7 @@ function renderGraded(){
     wrap.appendChild(buildSlabEl(g));
     card.appendChild(wrap);
     const label = document.createElement('div'); label.style.fontSize='11px'; label.style.color='#c9bfe0';
-    label.textContent = '#' + g.cardId + ' · vale ' + gradedSellValue(g.rareza, g.grade);
+    label.textContent = '#' + g.cardId + (g.signed ? ' ✒️' : '') + ' · vale ' + gradedSellValue(g.rareza, g.grade, g.signed);
     card.appendChild(label);
     const actions = document.createElement('div'); actions.className = 'tl-actions';
     const dispBtn = document.createElement('button'); dispBtn.className='btn small' + (g.displayed ? '' : ' secondary'); dispBtn.textContent = g.displayed ? 'Quitar del expositor' : 'Mostrar';
@@ -1495,6 +1570,7 @@ function showGradeReveal(graded){
   img.classList.add('grade-reveal-slide');
 
   const slab = document.getElementById('gradeRevealSlab');
+  applySignatureOverlay(slab.querySelector('.slab-big-window'), !!graded.signed);
   const gradeLetterEl = document.getElementById('gradeRevealGradeLetter');
   gradeLetterEl.textContent = '?';
   gradeLetterEl.className = 'slab-grade';
@@ -1628,8 +1704,8 @@ function weightedGrade(){
   for(const [g,w] of entries){ r -= w; if(r <= 0) return g; }
   return entries[entries.length-1][0];
 }
-function gradedSellValue(rareza, grade){
-  const base = EXPOSITOR_BASE_VALUE[rareza] || 20;
+function gradedSellValue(rareza, grade, signed){
+  const base = signed ? SIGNED_EXPOSITOR_BASE_VALUE : (EXPOSITOR_BASE_VALUE[rareza] || 20);
   return Math.max(CRAFT_COST, Math.round(base * GRADE_MULTIPLIER[grade]));
 }
 
@@ -1639,7 +1715,8 @@ function moveToTopLoader(cardId){
   if(!entry || !entry.pasted) return false;
   if(getEmptyToploaders() <= 0) return false;
   const sel = entry.selected;
-  const tl = { uid: genUid(), cardId, rareza: sel.rareza, alternativa: sel.alternativa, foil: !!entry.foil };
+  const ownedVariant = entry.owned.find(o => o.rareza===sel.rareza && o.alternativa===sel.alternativa);
+  const tl = { uid: genUid(), cardId, rareza: sel.rareza, alternativa: sel.alternativa, foil: !!entry.foil, signed: !!(ownedVariant && ownedVariant.signed) };
   entry.owned = entry.owned.filter(o => !(o.rareza === sel.rareza && o.alternativa === sel.alternativa));
   entry.foil = false;
   if(entry.owned.length === 0){
@@ -1654,7 +1731,7 @@ function moveToTopLoader(cardId){
   bumpStat('cardsToploaded', 1);
   renderGrid();
   checkAchievements();
-  return true;
+  return tl;   // truthy: el que llama lo usa para mostrar la animación de "entra a la funda"
 }
 /* Sacar una figurita de su Top Loader y volver a pegarla (queda pendiente de pegado) en el álbum */
 function pasteBackFromToploader(uid){
@@ -1667,13 +1744,14 @@ function pasteBackFromToploader(uid){
   let entry = collection[tl.cardId];
   if(!entry){ entry = { owned: [], selected: null, foil:false, pasted:false }; collection[tl.cardId] = entry; }
   const already = entry.owned.some(o => o.rareza === tl.rareza && o.alternativa === tl.alternativa);
-  if(!already) entry.owned.push({ rareza: tl.rareza, alternativa: tl.alternativa });
+  if(!already) entry.owned.push({ rareza: tl.rareza, alternativa: tl.alternativa, signed: !!tl.signed });
   entry.selected = { rareza: tl.rareza, alternativa: tl.alternativa };
   if(tl.foil) entry.foil = true;
   entry.pasted = false;
   saveCollection(collection);
   renderGrid();
   renderToploaders();
+  openToploaderOverlay('remove', tl);
 }
 /* Graduar una figurita del Top Loader: sale con una calidad al azar y pasa a ser una carta permanente del expositor */
 function gradeToploadedCard(uid){
@@ -1685,7 +1763,7 @@ function gradeToploadedCard(uid){
   list.splice(idx, 1); setToploadedCards(list);
   setEmptyExpositors(getEmptyExpositors() - 1);
   const grade = weightedGrade();
-  const graded = { uid: tl.uid, cardId: tl.cardId, rareza: tl.rareza, alternativa: tl.alternativa, foil: tl.foil, grade, displayed:false };
+  const graded = { uid: tl.uid, cardId: tl.cardId, rareza: tl.rareza, alternativa: tl.alternativa, foil: tl.foil, signed: !!tl.signed, grade, displayed:false };
   const glist = getGradedCards(); glist.push(graded); setGradedCards(glist);
   bumpStat('cardsGraded', 1);
   if(grade === 'Z') bumpStat('zGradesObtained', 1);
@@ -1711,7 +1789,7 @@ function sellGradedCard(uid){
   const idx = list.findIndex(x => x.uid === uid);
   if(idx < 0) return;
   const g = list[idx];
-  const value = gradedSellValue(g.rareza, g.grade);
+  const value = gradedSellValue(g.rareza, g.grade, g.signed);
   if(!confirm('¿Vender esta figurita calidad ' + g.grade + ' por ' + value + ' monedas rojas? No se puede deshacer.')) return;
   list.splice(idx, 1); setGradedCards(list);
   addCoins(value);
@@ -1779,7 +1857,9 @@ function pullPack(count, tier){
       pulls[pulls.length - 1] = weightedPick(POOL_LR_ONLY);
     }
   }
-  return pulls;
+  /* La firma se rolea al final, sobre el resultado definitivo de cada figurita, y es
+     completamente independiente de la rareza: cualquier pull puede salir firmado. */
+  return pulls.map(p => ({ card: p.card, variant: p.variant, signed: Math.random() < SIGNED_SIGNATURE_CHANCE }));
 }
 
 /* ============ COLLECTION HELPERS ============ */
@@ -1788,16 +1868,49 @@ function ownsVariant(slotId, rareza, alternativa){
   if(!e) return false;
   return e.owned.some(o => o.rareza===rareza && o.alternativa===alternativa);
 }
-function addNewVariant(card, variant){
+function addNewVariant(card, variant, signed){
   let entry = collection[card.id];
   if(!entry){ entry = { owned: [], selected: null, foil:false, pasted:false }; collection[card.id] = entry; }
-  entry.owned.push({ rareza: variant.rareza, alternativa: variant.alternativa });
+  entry.owned.push({ rareza: variant.rareza, alternativa: variant.alternativa, signed: !!signed });
   entry.selected = { rareza: variant.rareza, alternativa: variant.alternativa };
   entry.pasted = false; /* toda figurita nueva, sea la primera o una variante extra de una casilla ya ocupada, hay que pegarla a mano */
   saveCollection(collection);
 }
 function findVariant(card, rareza, alternativa){
   return card.variantes.find(v=>v.rareza===rareza && v.alternativa===alternativa);
+}
+function isSignedVariant(cardId, rareza, alternativa){
+  const entry = collection[cardId];
+  if(!entry) return false;
+  const o = entry.owned.find(x => x.rareza===rareza && x.alternativa===alternativa);
+  return !!(o && o.signed);
+}
+/* Crea (si hace falta) o quita la imagen de la firma superpuesta sobre una carta.
+   Para nodos persistentes que se reusan entre renders (el detalle, la slab grande). Los que se
+   reconstruyen desde cero en cada render (grilla, sobres, funda chica) simplemente no la agregan. */
+function applySignatureOverlay(container, signed){
+  let sig = container.querySelector('.signature-overlay');
+  if(signed){
+    if(!sig){
+      sig = document.createElement('img');
+      sig.className = 'signature-overlay';
+      sig.src = 'imagenes/Akira-Signature.png';
+      sig.alt = 'Firma de Akira Toriyama';
+      sig.onerror = () => { sig.style.display = 'none'; };
+      container.appendChild(sig);
+    }
+    sig.style.display = '';
+  } else if(sig){
+    sig.remove();
+  }
+}
+function buildSignatureImg(){
+  const sig = document.createElement('img');
+  sig.className = 'signature-overlay';
+  sig.src = 'imagenes/Akira-Signature.png';
+  sig.alt = 'Firma de Akira Toriyama';
+  sig.onerror = () => { sig.style.display = 'none'; };
+  return sig;
 }
 function countOwnedSlots(){ return Object.keys(collection).length; }
 /* Cartas que tienen al menos una variante de arte alternativo disponible */
@@ -1825,10 +1938,13 @@ function renderGrid(justLandedIds){
     if(entry && entry.pasted === false){
       slot.classList.add('pending');
       const v = findVariant(card, entry.selected.rareza, entry.selected.alternativa);
+      const signedPending = isSignedVariant(card.id, entry.selected.rareza, entry.selected.alternativa);
+      if(signedPending) slot.classList.add('signed-card');
       const img = document.createElement('img');
       img.src = cardImgSrc(v.img); img.loading = 'lazy'; img.style.opacity = '0.4';
       img.onerror = () => { img.style.display='none'; slot.style.background = rarityFallbackBg(v.rareza); };
       slot.appendChild(img);
+      if(signedPending) slot.appendChild(buildSignatureImg());
       const label = document.createElement('div');
       label.className = 'pending-label';
       label.textContent = 'Tocá para pegar';
@@ -1839,10 +1955,13 @@ function renderGrid(justLandedIds){
       const v = findVariant(card, sel.rareza, sel.alternativa);
       if(v.rareza === 'LR') slot.classList.add('is-lr-slot');
       if(entry.foil && v.rareza !== 'LR') slot.classList.add('foil-effect');
+      const signed = isSignedVariant(card.id, sel.rareza, sel.alternativa);
+      if(signed) slot.classList.add('signed-card');
       const img = document.createElement('img');
       img.src = cardImgSrc(v.img); img.loading = 'lazy';
       img.onerror = () => { img.style.display='none'; slot.style.background = rarityFallbackBg(v.rareza); };
       slot.appendChild(img);
+      if(signed) slot.appendChild(buildSignatureImg());
       const badge = document.createElement('div');
       badge.innerHTML = rarityBadgeSVG(v.rareza);
       badge.style.position='absolute'; badge.style.bottom='4px'; badge.style.left='4px'; badge.style.width='32px'; badge.style.height='32px';
@@ -1984,7 +2103,9 @@ document.querySelectorAll('.pack-art, .pack-big img').forEach(el => {
    sonidos/corte-papel.mp3    -> al abrir el sobre
    sonidos/desliz-carta.mp3   -> uno por cada figurita que se revela
    sonidos/pegado-figurita.mp3 -> al pegar una figurita en el álbum
-   sonidos/carta-en-case.mp3   -> al graduar una figurita, cuando entra al case (la agrega el usuario) */
+   sonidos/carta-en-case.mp3   -> al graduar una figurita, cuando entra al case (la agrega el usuario)
+   sonidos/carta-en-funda.mp3  -> al guardar una figurita en un Top Loader (si no está, suena desliz-carta.mp3)
+   sonidos/carta-fuera-funda.mp3 -> al sacarla del Top Loader para volver a pegarla (idem, cae a desliz-carta.mp3) */
 function playSound(path, volume){
   try{
     const audio = new Audio(path);
@@ -1997,6 +2118,20 @@ function playSlideSound(){ playSound('sonidos/desliz-carta.mp3', 0.6); }
 function playPasteSound(){ playSound('sonidos/pegado-figurita.mp3', 0.7); }
 function playAchievementSound(){ playSound('sonidos/logro-desbloqueado.mp3', 0.7); }
 function playGradeSound(){ playSound('sonidos/carta-en-case.mp3', 0.7); }
+/* Igual que playSound, pero si el archivo propio todavía no existe usa uno de reemplazo,
+   así la animación ya tiene sonido desde el primer momento. */
+function playSoundFallback(path, fallbackPath, volume){
+  let fellBack = false;
+  const fallback = () => { if(fellBack) return; fellBack = true; playSound(fallbackPath, volume); };
+  try{
+    const audio = new Audio(path);
+    audio.volume = volume;
+    audio.addEventListener('error', fallback);
+    audio.play().catch(fallback);
+  }catch(e){ fallback(); }
+}
+function playToploaderInSound(){ playSoundFallback('sonidos/carta-en-funda.mp3', 'sonidos/desliz-carta.mp3', 0.7); }
+function playToploaderOutSound(){ playSoundFallback('sonidos/carta-fuera-funda.mp3', 'sonidos/desliz-carta.mp3', 0.7); }
 
 /* ---- Ver el sobre a tamaño completo, elegir cuál (si hay más de un tipo) y tocarlo para abrirlo ---- */
 const packOpenOverlay = document.getElementById('packOpenOverlay');
@@ -2112,27 +2247,34 @@ function runPull(kind){
 function buildPullGrid(){
   pullGrid.innerHTML = '';
   pendingPulls.forEach((p, i) => {
-    const { card, variant } = p;
+    const { card, variant, signed } = p;
     const isDup = ownsVariant(card.id, variant.rareza, variant.alternativa);
     const item = document.createElement('div');
     item.className = 'pull-item';
     const cardEl = document.createElement('div');
-    cardEl.className = 'modal-card reveal' + (variant.rareza === 'LR' ? ' is-LR' : '');
+    cardEl.className = 'modal-card reveal' + (variant.rareza === 'LR' ? ' is-LR' : '') + (signed ? ' signed-card' : '');
     cardEl.style.animationDelay = (i * 0.08) + 's';
     cardEl.style.width = 'min(150px, 26vw)';
     const img = document.createElement('img');
     img.src = cardImgSrc(variant.img);
     img.onerror = () => { img.style.display='none'; cardEl.style.background = rarityFallbackBg(variant.rareza); };
     cardEl.appendChild(img);
+    if(signed) cardEl.appendChild(buildSignatureImg());
     item.appendChild(cardEl);
     const sub = document.createElement('div');
     sub.className = 'modal-sub';
     sub.innerHTML = rarityBadgeSVG(variant.rareza) + '<span>#' + card.id + (variant.alternativa ? ' · alt' : '') + '</span>';
     item.appendChild(sub);
+    if(signed){
+      const sig = document.createElement('div');
+      sig.className = 'dup-tag signed-tag';
+      sig.innerHTML = '✒️<span>¡Firmada por Akira Toriyama!</span>';
+      item.appendChild(sig);
+    }
     if(isDup){
       const dup = document.createElement('div');
       dup.className = 'dup-tag';
-      dup.innerHTML = coinIconSVG() + '<span>+' + COIN_VALUE[variant.rareza] + ' (repetida)</span>';
+      dup.innerHTML = coinIconSVG() + '<span>+' + (signed ? SIGNED_COIN_VALUE : COIN_VALUE[variant.rareza]) + ' (repetida)</span>';
       item.appendChild(dup);
     }
     pullGrid.appendChild(item);
@@ -2162,12 +2304,12 @@ function finalizePull(){
   if(pendingPulls){
     let coinsEarned = 0;
     for(const p of pendingPulls){
-      const { card, variant } = p;
+      const { card, variant, signed } = p;
       if(ownsVariant(card.id, variant.rareza, variant.alternativa)){
-        coinsEarned += COIN_VALUE[variant.rareza];
+        coinsEarned += signed ? SIGNED_COIN_VALUE : COIN_VALUE[variant.rareza];
         bumpStat('dupesConverted', 1);
       } else {
-        addNewVariant(card, variant);
+        addNewVariant(card, variant, signed);
       }
     }
     if(coinsEarned > 0) addCoins(coinsEarned);
@@ -2290,12 +2432,115 @@ function openGradedDetail(g){
   document.getElementById('gradedDetailFooter').textContent = nombre + (g.foil ? ' · Foil ✨' : '');
   document.getElementById('gradedDetailTitle').textContent = nombre;
   document.getElementById('gradedDetailSub').innerHTML = (v ? rarityBadgeSVG(v.rareza) : '') +
-    '<span>Calidad ' + g.grade + ' · vale ' + gradedSellValue(g.rareza, g.grade) + ' monedas</span>';
+    '<span>Calidad ' + g.grade + ' · vale ' + gradedSellValue(g.rareza, g.grade, g.signed) + ' monedas</span>' + (g.signed ? ' <span>· Firmada por Akira Toriyama ✒️</span>' : '');
   document.querySelector('#gradedDetailSlab .slab-big-window').classList.toggle('foil-effect', !!g.foil);
+  applySignatureOverlay(document.querySelector('#gradedDetailSlab .slab-big-window'), !!g.signed);
+  document.getElementById('gradedDetailSlab').classList.toggle('signed-card', !!g.signed);
   if(v) gradedAnimator.tryAnimate(v); else gradedAnimator.stop();
   gradedDetailOverlay.classList.add('show');
 }
 document.getElementById('gradedDetailClose').addEventListener('click', closeGradedDetailOverlay);
+
+/* ============ TOP LOADER: funda realista, vista grande interactiva y animaciones ============
+   buildToploaderSleeve arma la funda (la usan la casilla del inventario y la vista grande).
+   openToploaderOverlay(modo, tl):
+     'view'   -> vista grande del inventario: tilt 3D, LWF si es LR, botones Pegar / Graduar
+     'insert' -> la carta baja y entra por la boca de la funda (con sonido), después queda interactiva
+     'remove' -> la carta sale de la funda hacia arriba (con sonido), al volver a pegarla en el álbum */
+function buildToploaderSleeve(tl, opts){
+  opts = opts || {};
+  const sleeve = document.createElement('div');
+  sleeve.className = 'toploader' + (opts.big ? ' toploader-big tilt-card' : ' tl-clickable');
+  const cardEl = document.createElement('div'); cardEl.className = 'tlb-card' + (tl.signed ? ' signed-card' : '');
+  if(tl.foil) cardEl.classList.add('foil-effect');
+  const img = document.createElement('img');
+  img.src = tlHelperImg(tl.cardId, tl.rareza, tl.alternativa);
+  img.onerror = () => { img.style.display = 'none'; cardEl.style.background = rarityFallbackBg(tl.rareza); };
+  cardEl.appendChild(img);
+  if(tl.signed) cardEl.appendChild(buildSignatureImg());
+  let canvas = null, glare = null;
+  if(opts.big){
+    canvas = document.createElement('canvas'); canvas.className = 'modal-card-canvas'; canvas.width = 426; canvas.height = 568;
+    cardEl.appendChild(canvas);
+  }
+  sleeve.appendChild(cardEl);
+  const slit = document.createElement('div'); slit.className = 'tlb-slit'; sleeve.appendChild(slit);
+  const sweep = document.createElement('div'); sweep.className = 'tlb-sweep'; sweep.appendChild(document.createElement('i')); sleeve.appendChild(sweep);
+  if(opts.big){ glare = document.createElement('div'); glare.className = 'card-glare'; sleeve.appendChild(glare); }
+  if(opts.badge){
+    const badge = document.createElement('div'); badge.className = 'tlb-badge'; badge.innerHTML = rarityBadgeSVG(tl.rareza); sleeve.appendChild(badge);
+  }
+  return { sleeve, cardEl, canvas, glare };
+}
+
+const toploaderOverlay = document.getElementById('toploaderOverlay');
+const toploaderStage = document.getElementById('toploaderStage');
+const toploaderTitle = document.getElementById('toploaderTitle');
+const toploaderSub = document.getElementById('toploaderSub');
+const toploaderActions = document.getElementById('toploaderActions');
+let toploaderAnimator = null;   // animador LWF de la vista grande (solo se usa con LR)
+let toploaderTimers = [];
+function clearToploaderState(){
+  toploaderTimers.forEach(clearTimeout); toploaderTimers = [];
+  if(toploaderAnimator){ toploaderAnimator.stop(); toploaderAnimator = null; }
+}
+function closeToploaderOverlay(){
+  clearToploaderState();
+  toploaderStage.replaceChildren();
+  toploaderOverlay.classList.remove('show');
+}
+function openToploaderOverlay(mode, tl){
+  clearToploaderState();
+  const card = CARDS.find(c => c.id === tl.cardId);
+  const v = card ? findVariant(card, tl.rareza, tl.alternativa) : null;
+  const nombre = v ? v.nombre : ('#' + tl.cardId);
+  const parts = buildToploaderSleeve(tl, { big:true });
+  attachTilt(parts.sleeve, parts.glare);
+  toploaderStage.replaceChildren(parts.sleeve);
+  toploaderActions.replaceChildren();
+  toploaderSub.innerHTML = (v ? rarityBadgeSVG(v.rareza) : '') + '<span>' + nombre + ' · #' + tl.cardId + (tl.foil ? ' · Foil ✨' : '') + '</span>';
+
+  const addBtn = (text, cls, fn, disabled) => {
+    const b = document.createElement('button'); b.className = 'btn ' + cls; b.textContent = text;
+    if(disabled) b.disabled = true;
+    b.addEventListener('click', fn);
+    toploaderActions.appendChild(b);
+    return b;
+  };
+  const startLwf = () => {
+    if(!v) return;
+    toploaderAnimator = makeLwfAnimator(parts.cardEl, parts.canvas);
+    toploaderAnimator.tryAnimate(v);
+  };
+
+  if(mode === 'insert'){
+    toploaderTitle.textContent = 'Guardando la figurita en el Top Loader…';
+    parts.cardEl.classList.add('tlb-inserting');
+    playToploaderInSound();
+    toploaderTimers.push(setTimeout(() => {
+      parts.sleeve.classList.add('sealed');
+      toploaderTitle.textContent = '¡Figurita protegida!';
+      addBtn('Continuar', '', closeToploaderOverlay);
+      startLwf();
+    }, 950));
+  } else if(mode === 'remove'){
+    toploaderTitle.textContent = 'Sacando la figurita del Top Loader…';
+    parts.cardEl.classList.add('tlb-removing');
+    playToploaderOutSound();
+    toploaderTimers.push(setTimeout(() => {
+      toploaderTitle.textContent = '¡Lista para pegar!';
+      toploaderSub.innerHTML = '<span>Volvió a tu álbum: pegala para dejarla firme.</span>';
+      addBtn('Continuar', '', closeToploaderOverlay);
+    }, 850));
+  } else {
+    toploaderTitle.textContent = 'Top Loader';
+    startLwf();
+    addBtn('Pegar en álbum', '', () => { closeToploaderOverlay(); pasteBackFromToploader(tl.uid); });
+    addBtn('Graduar', 'secondary', () => { closeToploaderOverlay(); gradeToploadedCard(tl.uid); }, getEmptyExpositors() <= 0);
+  }
+  toploaderOverlay.classList.add('show');
+}
+document.getElementById('toploaderClose').addEventListener('click', closeToploaderOverlay);
 
 function openDetail(card){
   const entry = collection[card.id];
@@ -2306,11 +2551,13 @@ function openDetail(card){
 function renderDetail(card, sel){
   const v = findVariant(card, sel.rareza, sel.alternativa);
   const entry = collection[card.id];
+  const signed = isSignedVariant(card.id, sel.rareza, sel.alternativa);
   detailImg.src = cardImgSrc(v.img); detailImg.style.display='';
   detailImg.onerror = () => { detailImg.style.display='none'; detailCard.style.background = rarityFallbackBg(v.rareza); };
-  detailCard.className = 'modal-card tilt-card' + (v.rareza==='LR' ? ' is-LR' : '') + (entry.foil && v.rareza!=='LR' ? ' foil-effect' : '');
-  detailTitle.textContent = '#' + card.id + ' · ' + v.nombre;
-  detailSub.innerHTML = rarityBadgeSVG(v.rareza) + '<span>' + (v.alternativa ? 'Arte alternativo' : 'Arte estándar') + (entry.foil && v.rareza!=='LR' ? ' · Foil ✨' : '') + '</span>';
+  detailCard.className = 'modal-card tilt-card' + (v.rareza==='LR' ? ' is-LR' : '') + (entry.foil && v.rareza!=='LR' ? ' foil-effect' : '') + (signed ? ' signed-card' : '');
+  applySignatureOverlay(detailCard, signed);
+  detailTitle.textContent = '#' + card.id + ' · ' + v.nombre + (signed ? ' ✒️' : '');
+  detailSub.innerHTML = rarityBadgeSVG(v.rareza) + '<span>' + (v.alternativa ? 'Arte alternativo' : 'Arte estándar') + (entry.foil && v.rareza!=='LR' ? ' · Foil ✨' : '') + (signed ? ' · Firmada por Akira Toriyama ✒️' : '') + '</span>';
   detailAnimator.tryAnimate(v);
 
   variantSwitch.innerHTML = '';
@@ -2335,8 +2582,9 @@ function renderDetail(card, sel){
     tlBtn.textContent = 'Guardar en Top Loader';
     tlBtn.onclick = () => {
       if(!confirm('¿Sacar esta figurita del álbum y guardarla en un Top Loader? La casilla vuelve a quedar pendiente de otra figurita si tenés otra versión, o vacía si era la única.')) return;
-      moveToTopLoader(card.id);
+      const tl = moveToTopLoader(card.id);
       closeDetailOverlay();
+      if(tl) openToploaderOverlay('insert', tl);
     };
   } else {
     tlBtn.style.display = 'none';
