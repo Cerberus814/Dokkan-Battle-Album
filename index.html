@@ -306,6 +306,11 @@
     background: linear-gradient(90deg, #2b2013, #4a3a1c); color:#ffd76a; font-weight:800;
     border: 1px solid rgba(255,215,100,0.6);
   }
+  .signed-dupe-card{
+    position:relative; width:100%; aspect-ratio: var(--card-ratio); border-radius:8px; overflow:hidden;
+    background:#1a1430; box-shadow: 0 6px 14px rgba(0,0,0,0.4);
+  }
+  .signed-dupe-card img{ width:100%; height:100%; object-fit:cover; display:block; }
 
   /* ---------- Modal (reveal + detail) ---------- */
   .overlay{
@@ -931,6 +936,10 @@
       <p class="perfil-desc">Top Loaders y cartas graduadas que todavía no están en el álbum ni en el expositor. Desde acá las volvés a pegar, las graduás o las vendés.</p>
       <div class="extra-sobres-line" id="topLoaderCountLine">Top loaders vacíos: 0</div>
       <div class="tl-grid" id="topLoaderGrid"></div>
+      <h4 class="perfil-subtitle">Firmadas repetidas de Akira Toriyama</h4>
+      <p class="perfil-desc">Cuando te toca una firma en una figurita que ya tenías, no se vende sola: queda acá, hasta <span id="signedDupeMaxLabel"></span> a la vez. Desde acá la subís al álbum (reemplaza a la copia sin firmar), la mandás a un Top Loader para graduarla después, o la vendés directo por monedas.</p>
+      <div class="extra-sobres-line" id="signedDupeCountLine">Firmadas guardadas: 0</div>
+      <div class="tl-grid" id="signedDupeGrid"></div>
       <h4 class="perfil-subtitle">Cartas graduadas</h4>
       <div class="extra-sobres-line" id="expositorCountLine">Expositores vacíos: 0</div>
       <div class="tl-grid" id="gradedGrid"></div>
@@ -1029,7 +1038,7 @@
 </div>
 
 <div class="lr-video-overlay" id="lrVideoOverlay">
-  <video id="lrVideoEl" class="lr-video" src="videos/BulmaLRanim.mp4" playsinline></video>
+  <video id="lrVideoEl" class="lr-video" playsinline></video>
   <button class="btn secondary lr-video-skip" id="lrVideoSkip">Saltar ›</button>
 </div>
 
@@ -1244,6 +1253,10 @@ const LS_TOPLOADERS_EMPTY = 'dba_dragonball_toploaders_empty_v1';
 const LS_EXPOSITORS_EMPTY = 'dba_dragonball_expositors_empty_v1';
 const LS_TOPLOADED_CARDS = 'dba_dragonball_toploaded_cards_v1';
 const LS_GRADED_CARDS = 'dba_dragonball_graded_cards_v1';
+const LS_SIGNED_DUPES = 'dba_dragonball_signed_dupes_v1';
+const SIGNED_DUPE_MAX_SLOTS = 5; /* apartado especial para firmadas repetidas: si está lleno, se venden solas */
+function getSignedDupes(){ try{ return JSON.parse(localStorage.getItem(LS_SIGNED_DUPES) || '[]'); }catch(e){ return []; } }
+function setSignedDupes(list){ localStorage.setItem(LS_SIGNED_DUPES, JSON.stringify(list)); }
 const LS_PROFILE_NICK = 'dba_dragonball_profile_nick_v1';
 const LS_PROFILE_BIO = 'dba_dragonball_profile_bio_v1';
 const LS_PROFILE_AVATAR = 'dba_dragonball_profile_avatar_v1';
@@ -1483,6 +1496,94 @@ function buildSlabEl(g){
   if(g.signed) win.appendChild(buildSignatureImg());
   slab.appendChild(win);
   return slab;
+}
+function buildSignedDupeCardEl(item){
+  const wrap = document.createElement('div'); wrap.className = 'signed-dupe-card signed-card';
+  const img = document.createElement('img');
+  img.src = tlHelperImg(item.cardId, item.rareza, item.alternativa);
+  img.onerror = () => { img.style.display = 'none'; wrap.style.background = rarityFallbackBg(item.rareza); };
+  wrap.appendChild(img);
+  wrap.appendChild(buildSignatureImg());
+  return wrap;
+}
+function renderSignedDupes(){
+  document.getElementById('signedDupeMaxLabel').textContent = SIGNED_DUPE_MAX_SLOTS;
+  const list = getSignedDupes();
+  document.getElementById('signedDupeCountLine').textContent = 'Firmadas guardadas: ' + list.length + ' / ' + SIGNED_DUPE_MAX_SLOTS;
+  const grid = document.getElementById('signedDupeGrid');
+  grid.innerHTML = '';
+  if(list.length === 0){
+    const note = document.createElement('div'); note.className='tl-empty-note';
+    note.textContent = 'Todavía no te tocó ninguna figurita firmada repetida.';
+    grid.appendChild(note);
+  }
+  for(const item of list){
+    const card = document.createElement('div'); card.className = 'tl-card';
+    card.appendChild(buildSignedDupeCardEl(item));
+    const label = document.createElement('div'); label.style.fontSize='11px'; label.style.color='#c9bfe0';
+    label.textContent = '#' + item.cardId;
+    card.appendChild(label);
+    const actions = document.createElement('div'); actions.className = 'tl-actions';
+    const pasteBtn = document.createElement('button'); pasteBtn.className='btn small'; pasteBtn.textContent='Pegar en álbum';
+    pasteBtn.addEventListener('click', () => upgradeAlbumWithSignedDupe(item.uid));
+    actions.appendChild(pasteBtn);
+    const tlBtn = document.createElement('button'); tlBtn.className='btn small secondary'; tlBtn.textContent='Top Loader';
+    if(getEmptyToploaders() <= 0) tlBtn.disabled = true;
+    tlBtn.addEventListener('click', () => moveSignedDupeToTopLoader(item.uid));
+    actions.appendChild(tlBtn);
+    const sellBtn = document.createElement('button'); sellBtn.className='btn small secondary'; sellBtn.textContent='Vender ya';
+    sellBtn.addEventListener('click', () => sellSignedDupe(item.uid));
+    actions.appendChild(sellBtn);
+    card.appendChild(actions);
+    grid.appendChild(card);
+  }
+}
+/* Sube la firmada repetida al álbum: si la copia original de esa variante sigue en el álbum, la
+   "actualiza" a firmada (son la misma figurita, ahora con firma). Si esa copia ya no está ahí
+   (por ejemplo, se guardó en un Top Loader mientras tanto), la agrega como si fuera nueva. */
+function upgradeAlbumWithSignedDupe(uid){
+  const list = getSignedDupes();
+  const idx = list.findIndex(x => x.uid === uid);
+  if(idx < 0) return;
+  const item = list[idx];
+  list.splice(idx, 1); setSignedDupes(list);
+  let entry = collection[item.cardId];
+  if(!entry){ entry = { owned: [], selected: null, foil:false, pasted:false }; collection[item.cardId] = entry; }
+  const existing = entry.owned.find(o => o.rareza === item.rareza && o.alternativa === item.alternativa);
+  if(existing){ existing.signed = true; }
+  else { entry.owned.push({ rareza: item.rareza, alternativa: item.alternativa, signed: true }); }
+  entry.selected = { rareza: item.rareza, alternativa: item.alternativa };
+  entry.pasted = false;
+  saveCollection(collection);
+  renderGrid();
+  renderSignedDupes();
+  checkAchievements();
+}
+/* Manda la firmada repetida directo a un Top Loader, sin pasar por el álbum (es una copia de más
+   de una figurita que ya tenías, así que no hace falta pegarla primero). */
+function moveSignedDupeToTopLoader(uid){
+  if(getEmptyToploaders() <= 0) return;
+  const list = getSignedDupes();
+  const idx = list.findIndex(x => x.uid === uid);
+  if(idx < 0) return;
+  const item = list[idx];
+  list.splice(idx, 1); setSignedDupes(list);
+  setEmptyToploaders(getEmptyToploaders() - 1);
+  const tl = { uid: genUid(), cardId: item.cardId, rareza: item.rareza, alternativa: item.alternativa, foil:false, signed:true };
+  const tlist = getToploadedCards(); tlist.push(tl); setToploadedCards(tlist);
+  bumpStat('cardsToploaded', 1);
+  renderSignedDupes();
+  checkAchievements();
+  openToploaderOverlay('insert', tl);
+}
+function sellSignedDupe(uid){
+  const list = getSignedDupes();
+  const idx = list.findIndex(x => x.uid === uid);
+  if(idx < 0) return;
+  if(!confirm('¿Vender esta figurita firmada repetida por ' + SIGNED_COIN_VALUE + ' monedas rojas? No se puede deshacer.')) return;
+  list.splice(idx, 1); setSignedDupes(list);
+  addCoins(SIGNED_COIN_VALUE);
+  renderSignedDupes();
 }
 function renderToploaders(){
   document.getElementById('topLoaderCountLine').textContent = 'Top loaders vacíos: ' + getEmptyToploaders();
@@ -2105,7 +2206,11 @@ document.querySelectorAll('.pack-art, .pack-big img').forEach(el => {
    sonidos/pegado-figurita.mp3 -> al pegar una figurita en el álbum
    sonidos/carta-en-case.mp3   -> al graduar una figurita, cuando entra al case (la agrega el usuario)
    sonidos/carta-en-funda.mp3  -> al guardar una figurita en un Top Loader (si no está, suena desliz-carta.mp3)
-   sonidos/carta-fuera-funda.mp3 -> al sacarla del Top Loader para volver a pegarla (idem, cae a desliz-carta.mp3) */
+   sonidos/carta-fuera-funda.mp3 -> al sacarla del Top Loader para volver a pegarla (idem, cae a desliz-carta.mp3)
+
+   Videos de invocación (carpeta videos/, los agrega el usuario):
+   videos/gokusigned.mp4  -> si el sobre trae una figurita Firmada (tiene prioridad incluso sobre una LR)
+   videos/BulmaLRanim.mp4 -> si el sobre trae una LR y ninguna figurita Firmada */
 function playSound(path, volume){
   try{
     const audio = new Audio(path);
@@ -2236,9 +2341,13 @@ function runPull(kind){
   if(kind === 'shopE') bumpStat('exclusivePacksOpened', 1);
   refreshPackUI(); refreshTicketLine();
   checkAchievements();
+  /* Si viene una figurita firmada, ese video tiene prioridad incluso sobre una LR en el mismo sobre. */
+  const hasSigned = pendingPulls.some(p => p.signed);
   const hasLR = pendingPulls.some(p => p.variant.rareza === 'LR');
-  if(hasLR){
-    showLRVideo(() => { buildPullGrid(); revealOverlay.classList.add('show'); });
+  if(hasSigned){
+    showSummonVideo('videos/gokusigned.mp4', () => { buildPullGrid(); revealOverlay.classList.add('show'); });
+  } else if(hasLR){
+    showSummonVideo('videos/BulmaLRanim.mp4', () => { buildPullGrid(); revealOverlay.classList.add('show'); });
   } else {
     buildPullGrid();
     revealOverlay.classList.add('show');
@@ -2246,6 +2355,7 @@ function runPull(kind){
 }
 function buildPullGrid(){
   pullGrid.innerHTML = '';
+  let signedSlotsPreview = getSignedDupes().length; /* simula el mismo orden/tope que aplicará finalizePull() */
   pendingPulls.forEach((p, i) => {
     const { card, variant, signed } = p;
     const isDup = ownsVariant(card.id, variant.rareza, variant.alternativa);
@@ -2274,15 +2384,30 @@ function buildPullGrid(){
     if(isDup){
       const dup = document.createElement('div');
       dup.className = 'dup-tag';
-      dup.innerHTML = coinIconSVG() + '<span>+' + (signed ? SIGNED_COIN_VALUE : COIN_VALUE[variant.rareza]) + ' (repetida)</span>';
+      if(signed){
+        if(signedSlotsPreview < SIGNED_DUPE_MAX_SLOTS){
+          signedSlotsPreview++;
+          dup.innerHTML = '📦<span>Repetida: va al apartado especial de firmadas</span>';
+        } else {
+          dup.innerHTML = coinIconSVG() + '<span>+' + SIGNED_COIN_VALUE + ' (apartado lleno, se vende sola)</span>';
+        }
+      } else {
+        dup.innerHTML = coinIconSVG() + '<span>+' + COIN_VALUE[variant.rareza] + ' (repetida)</span>';
+      }
       item.appendChild(dup);
     }
     pullGrid.appendChild(item);
     setTimeout(playSlideSound, i * 80);
   });
 }
-/* ---- Video especial cuando toca una LR (carpeta videos/BulmaLRanim.mp4) ---- */
-function showLRVideo(onDone){
+/* ---- Video especial de invocación: firmada (videos/gokusigned.mp4) o LR (videos/BulmaLRanim.mp4) ----
+   Firefox/LibreWolf son mucho más estrictos que Chrome para permitir el autoplay con sonido: acá
+   el play() llega varios milisegundos después del click (hay un setTimeout de por medio para la
+   animación del sobre), y Firefox puede considerar que ya "se venció" el permiso del click y
+   bloquear el video. Por eso NUNCA nos quedamos solo esperando a que termine: si el navegador lo
+   bloquea, reintentamos una vez muteado (el autoplay muteado casi nunca se bloquea) y, si ni así
+   se puede, seguimos directo a la revelación de cartas en vez de dejar la pantalla en negro. */
+function showSummonVideo(src, onDone){
   const overlay = document.getElementById('lrVideoOverlay');
   const video = document.getElementById('lrVideoEl');
   let done = false;
@@ -2293,12 +2418,21 @@ function showLRVideo(onDone){
     video.pause();
     onDone();
   };
+  video.muted = false;
+  video.src = src;
   video.onended = finish;
   video.onerror = () => { console.warn('[video no se pudo cargar]', video.src); finish(); }; // si el archivo no está todavía, seguimos directo a la revelación
   document.getElementById('lrVideoSkip').onclick = finish;
   overlay.classList.add('show');
   try{ video.currentTime = 0; }catch(e){}
-  video.play().catch((e)=>{ console.warn('[video bloqueado por el navegador]', e && e.message); /* el botón Saltar / los controles igual permiten seguir */ });
+  video.play().catch((e)=>{
+    console.warn('[video bloqueado por el navegador, reintentando muteado]', e && e.message);
+    video.muted = true;
+    video.play().catch((e2)=>{
+      console.warn('[video bloqueado incluso muteado, se salta]', e2 && e2.message);
+      finish();
+    });
+  });
 }
 function finalizePull(){
   if(pendingPulls){
@@ -2306,8 +2440,21 @@ function finalizePull(){
     for(const p of pendingPulls){
       const { card, variant, signed } = p;
       if(ownsVariant(card.id, variant.rareza, variant.alternativa)){
-        coinsEarned += signed ? SIGNED_COIN_VALUE : COIN_VALUE[variant.rareza];
-        bumpStat('dupesConverted', 1);
+        if(signed){
+          const dupes = getSignedDupes();
+          if(dupes.length < SIGNED_DUPE_MAX_SLOTS){
+            dupes.push({ uid: genUid(), cardId: card.id, rareza: variant.rareza, alternativa: variant.alternativa, signed:true });
+            setSignedDupes(dupes);
+            bumpStat('signedDupesStored', 1);
+          } else {
+            /* apartado lleno (y, al ser repetida, tampoco hay lugar en el álbum): se vende sola */
+            coinsEarned += SIGNED_COIN_VALUE;
+            bumpStat('dupesConverted', 1);
+          }
+        } else {
+          coinsEarned += COIN_VALUE[variant.rareza];
+          bumpStat('dupesConverted', 1);
+        }
       } else {
         addNewVariant(card, variant, signed);
       }
@@ -2680,12 +2827,13 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
     localStorage.removeItem(LS_EXPOSITORS_EMPTY);
     localStorage.removeItem(LS_TOPLOADED_CARDS);
     localStorage.removeItem(LS_GRADED_CARDS);
+    localStorage.removeItem(LS_SIGNED_DUPES);
     localStorage.removeItem(LS_SHOP_PURCHASES);
     localStorage.removeItem(LS_SHOP_LIFETIME);
     setCoins(0);
     setLuckyTickets(0);
     renderGrid(); refreshPackUI(); refreshTicketLine(); refreshShopLimits();
-    if(document.getElementById('view-perfil').classList.contains('active')){ renderToploaders(); renderGraded(); }
+    if(document.getElementById('view-perfil').classList.contains('active')){ renderToploaders(); renderGraded(); renderSignedDupes(); }
     if(document.getElementById('view-logros').classList.contains('active')){ renderAchievements(); }
   }
 });
@@ -2832,7 +2980,7 @@ function setView(view){
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + view).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.view === view));
-  if(view === 'perfil'){ renderToploaders(); renderGraded(); loadProfileHeader(); }
+  if(view === 'perfil'){ renderToploaders(); renderGraded(); renderSignedDupes(); loadProfileHeader(); }
   if(view === 'logros'){ renderAchievements(); }
   if(view === 'tienda'){ refreshShopLimits(); }
 }
